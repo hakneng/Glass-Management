@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ឧបករណ៍បង្កើតកូនសោរអាជ្ញាប័ណ្ណ (License Key Generator)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%22><text y=%2226%22 font-size=%2228%22>🔑</text></svg>">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kantumruy Pro', 'Khmer OS Siemreap', system-ui, -apple-system, sans-serif; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .container {
+      width: 100%;
+      max-width: 640px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(37, 99, 235, 0.2);
+      color: #60a5fa;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .header p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .radio-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .radio-card {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      font-size: 13px;
+    }
+    .radio-card:hover {
+      border-color: #64748b;
+    }
+    .radio-card input[type="radio"] {
+      accent-color: var(--primary);
+    }
+    .radio-card.selected {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.12);
+    }
+    .btn {
+      width: 100%;
+      padding: 12px 18px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+    .result-box {
+      display: none;
+      margin-top: 24px;
+      padding: 20px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 10px;
+    }
+    .result-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .key-display {
+      background: #0f172a;
+      border: 1px dashed var(--success);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #34d399;
+      text-align: center;
+      user-select: all;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+    .btn-copy {
+      padding: 9px 14px;
+      background: #059669;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+    .btn-copy:hover {
+      background: #047857;
+    }
+    .msg-template-box {
+      margin-top: 14px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12.5px;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .footer-note {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <span class="header-badge">ឧបករណ៍គ្រប់គ្រងអាជ្ញាប័ណ្ណ (Developer Tool)</span>
+      <h1>🔑 បង្កើតកូនសោរអាជ្ញាប័ណ្ណ (License Key)</h1>
+      <p>សម្រាប់បង្កើតកូនសោរផ្ញើឱ្យសាលារៀន ឬគ្រូបង្រៀន ដើម្បីបើកដំណើរការកម្មវិធី</p>
+    </div>
+
+    <form id="gen-form">
+      <div class="form-group">
+        <label for="client-name">១. ឈ្មោះសាលា / អតិថិជន (School / Client Name)</label>
+        <input type="text" id="client-name" class="form-control" placeholder="ឧទាហរណ៍៖ វិទ្យាល័យ មិត្តភាពខ្មែរ-ជប៉ុន">
+        <div class="hint">ចំណាំឈ្មោះអតិថិជនដើម្បីងាយស្រួលគ្រប់គ្រង</div>
+      </div>
+
+      <div class="form-group">
+        <label for="machine-id">២. កូដម៉ាស៊ីនរបស់អតិថិជន (Client Machine ID) <span style="color: #ef4444;">*</span></label>
+        <input type="text" id="machine-id" class="form-control" required placeholder="ឧទាហរណ៍៖ MID-9A4B-2C1F-7E80" style="text-transform: uppercase; font-family: monospace; font-weight: bold; letter-spacing: 1px;">
+        <div class="hint">ចម្លងយកពីផ្ទាំងចាក់សោរលើកុំព្យូទ័ររបស់អតិថិជន</div>
+      </div>
+
+      <div class="form-group">
+        <label>៣. រយៈពេលសុពលភាពអាជ្ញាប័ណ្ណ (Validity Duration)</label>
+        <div class="radio-group">
+          <label class="radio-card selected">
+            <input type="radio" name="duration" value="20271031" checked>
+            <span>១ ឆ្នាំសិក្សា (៣១ តុលា ២០២៧)</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="duration" value="20281031">
+            <span>២ ឆ្នាំសិក្សា (៣១ តុលា ២០២៨)</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="duration" value="20261031">
+            <span>ឆ្នាំសិក្សាបច្ចុប្បន្ន (៣១ តុលា ២០២៦)</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="duration" value="LIFE">
+            <span>ពេញមួយជីវិត (Lifetime)</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">
+        <span>⚡ បង្កើតកូនសោរអាជ្ញាប័ណ្ណ (Generate License Key)</span>
+      </button>
+    </form>
+
+    <!-- Result Area -->
+    <div id="result-box" class="result-box">
+      <div class="result-title">
+        <span>✅ បង្កើតកូនសោរបានដោយជោគជ័យ!</span>
+      </div>
+      <div id="key-output" class="key-display"></div>
+      <button type="button" id="btn-copy-key" class="btn-copy">
+        <span>📋 ចម្លងតែកូនសោរ (Copy Key)</span>
+      </button>
+
+      <div style="margin-top: 14px; font-size: 13px; font-weight: 600; color: #e2e8f0;">
+        ✉️ សារសម្រាប់ចម្លងផ្ញើឱ្យអតិថិជន (Telegram / Message):
+      </div>
+      <div id="msg-template" class="msg-template-box"></div>
+      <button type="button" id="btn-copy-msg" class="btn-copy" style="margin-top: 8px; background: #2563eb;">
+        <span>📋 ចម្លងសារទាំងអស់ផ្ញើតាម Telegram</span>
+      </button>
+    </div>
+
+    <div class="footer-note">
+      🔒 ឯកសារនេះសម្រាប់តែម្ចាស់កម្មវិធីប៉ុណ្ណោះ — សូមកុំចែករំលែកឯកសារនេះទៅកាន់អ្នកដទៃ
+    </div>
+  </div>
+
+  <script>
+    const LICENSE_SECRET = 'AGY_GLASS_ACADEMIC_SYS_PRO_SECURE_SALT_2026_#789X!';
+
+    function sha256(ascii) {
+      function utf8Encode(str) {
+        const bytes = [];
+        for (let i = 0; i < str.length; i++) {
+          let code = str.charCodeAt(i);
+          if (code < 0x80) bytes.push(code);
+          else if (code < 0x800) bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+          else if (code < 0xd800 || code >= 0xe000) bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+          else {
+            i++;
+            code = 0x10000 + (((code & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
+            bytes.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 0x3f), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+          }
+        }
+        return bytes;
+      }
+      function rotr(n, b) { return (n >>> b) | (n << (32 - b)); }
+      const K = [
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+      ];
+      const H = [
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+      ];
+      const bytes = utf8Encode(ascii);
+      const bitLen = bytes.length * 8;
+      bytes.push(0x80);
+      while ((bytes.length % 64) !== 56) bytes.push(0);
+      const high = Math.floor(bitLen / 0x100000000);
+      const low = bitLen >>> 0;
+      for (let i = 7; i >= 0; i--) bytes.push(i >= 4 ? ((high >>> ((i - 4) * 8)) & 0xff) : ((low >>> (i * 8)) & 0xff));
+      const W = new Array(64);
+      for (let chunk = 0; chunk < bytes.length; chunk += 64) {
+        for (let t = 0; t < 16; t++) {
+          const idx = chunk + t * 4;
+          W[t] = ((bytes[idx] << 24) | (bytes[idx + 1] << 16) | (bytes[idx + 2] << 8) | bytes[idx + 3]) >>> 0;
+        }
+        for (let t = 16; t < 64; t++) {
+          const s0 = rotr(W[t - 15], 7) ^ rotr(W[t - 15], 18) ^ (W[t - 15] >>> 3);
+          const s1 = rotr(W[t - 2], 17) ^ rotr(W[t - 2], 19) ^ (W[t - 2] >>> 10);
+          W[t] = (W[t - 16] + s0 + W[t - 7] + s1) >>> 0;
+        }
+        let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+        for (let t = 0; t < 64; t++) {
+          const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+          const ch = (e & f) ^ ((~e) & g);
+          const temp1 = (h + S1 + ch + K[t] + W[t]) >>> 0;
+          const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+          const maj = (a & b) ^ (a & c) ^ (b & c);
+          const temp2 = (S0 + maj) >>> 0;
+          h = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+        }
+        H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+        H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+      }
+      let hex = '';
+      for (let i = 0; i < 8; i++) {
+        let v = H[i].toString(16);
+        while (v.length < 8) v = '0' + v;
+        hex += v;
+      }
+      return hex;
+    }
+
+    function generateKey(machineId, durationCode) {
+      const m = machineId.trim().toUpperCase();
+      const d = durationCode.trim().toUpperCase();
+      const hash = sha256(`${m}:${d}:${LICENSE_SECRET}`).toUpperCase();
+      return `GLS-${d}-${hash.slice(0, 4)}-${hash.slice(4, 8)}-${hash.slice(8, 12)}`;
+    }
+
+    // Radio style toggle
+    document.querySelectorAll('.radio-card input').forEach(radio => {
+      radio.addEventListener('change', () => {
+        document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+        radio.closest('.radio-card').classList.add('selected');
+      });
+    });
+
+    const form = document.getElementById('gen-form');
+    const resultBox = document.getElementById('result-box');
+    const keyOutput = document.getElementById('key-output');
+    const msgTemplate = document.getElementById('msg-template');
+    const btnCopyKey = document.getElementById('btn-copy-key');
+    const btnCopyMsg = document.getElementById('btn-copy-msg');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const clientName = document.getElementById('client-name').value.trim() || 'លោកគ្រូ/អ្នកគ្រូ';
+      const midInput = document.getElementById('machine-id').value.trim().toUpperCase();
+      const duration = document.querySelector('input[name="duration"]:checked').value;
+
+      if (!midInput || !midInput.startsWith('MID-')) {
+        alert('សូមបញ្ចូលកូដម៉ាស៊ីនឱ្យបានត្រឹមត្រូវ (ឧទាហរណ៍៖ MID-XXXX-XXXX-XXXX)');
+        return;
+      }
+
+      const key = generateKey(midInput, duration);
+      keyOutput.textContent = key;
+
+      let expiryText = 'ពេញមួយជីវិត (Lifetime)';
+      if (duration !== 'LIFE') {
+        const y = duration.slice(0, 4);
+        const m = duration.slice(4, 6);
+        const d = duration.slice(6, 8);
+        expiryText = `ថ្ងៃទី ${d}/${m}/${y}`;
+      }
+
+      const message = `ជំរាបសួរ ${clientName}!
+នេះជាកូនសោរអាជ្ញាប័ណ្ណ (License Key) សម្រាប់ធ្វើឱ្យកម្មវិធីគ្រប់គ្រងពិន្ទុដំណើរការ ៖
+
+🔑 កូដម៉ាស៊ីន ៖ ${midInput}
+📅 សុពលភាពដល់ ៖ ${expiryText}
+✨ កូនសោរ (License Key) ៖ 
+${key}
+
+👉 របៀបប្រើប្រាស់ ៖ សូមចម្លងកូនសោរខាងលើ រួចយកទៅបិទភ្ជាប់ (Paste) ក្នុងប្រអប់ «បញ្ចូលកូនសោរ» លើផ្ទាំងចាក់សោរ រួចចុច «ធ្វើឱ្យសកម្ម» ជាការស្រេច។`;
+
+      msgTemplate.textContent = message;
+      resultBox.style.display = 'block';
+      resultBox.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    btnCopyKey.addEventListener('click', () => {
+      const text = keyOutput.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        btnCopyKey.textContent = '✅ បានចម្លងកូនសោរ!';
+        setTimeout(() => { btnCopyKey.textContent = '📋 ចម្លងតែកូនសោរ (Copy Key)'; }, 2000);
+      });
+    });
+
+    btnCopyMsg.addEventListener('click', () => {
+      const text = msgTemplate.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        btnCopyMsg.textContent = '✅ បានចម្លងសារទាំងអស់រួចរាល់!';
+        setTimeout(() => { btnCopyMsg.textContent = '📋 ចម្លងសារទាំងអស់ផ្ញើតាម Telegram'; }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>
