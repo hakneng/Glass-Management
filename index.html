@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ប្រព័ន្ធគ្រប់គ្រងពិន្ទុសិស្ស និងព្រឹត្តិបត្រឌីជីថល (ថ្នាក់ទី១២A)</title>
-  <link rel="stylesheet" href="css/styles.css?v=19.8">
+  <link rel="stylesheet" href="css/styles.css?v=20.36">
   <link rel="icon" type="image/x-icon" href="app-icon.ico">
   <link rel="apple-touch-icon" href="app-icon.png">
 </head>
@@ -235,7 +235,7 @@
               <button class="btn btn-secondary" onclick="App.switchTab('semester-rankings')">🎖️ តារាងចំណាត់ថ្នាក់ឆមាស & ឆ្នាំ</button>
               <button class="btn btn-secondary" onclick="App.switchTab('report-cards')">🖨️ បោះពុម្ពព្រឹត្តិបត្រពិន្ទុ</button>
               <button class="btn btn-secondary" onclick="App.switchTab('students')">👥 បញ្ជីឈ្មោះសិស្ស</button>
-              <button class="btn btn-secondary" onclick="App.switchTab('honor-roll')">🏆 ប័ណ្ណសរសើរសិស្សពូកែ</button>
+              <button class="btn btn-secondary" onclick="App.openHonorCertificateView()">🏆 ប័ណ្ណសរសើរសិស្សពូកែ</button>
               <button class="btn btn-secondary" onclick="App.openRetestRepeatView()" style="border-color: #f59e0b; color: #b45309; font-weight: 600;">⚖️ សិស្សប្រឡងឡើងថ្នាក់ & ត្រួតថ្នាក់</button>
             </div>
           </div>
@@ -247,111 +247,110 @@
              ========================================== -->
         <section id="tab-students" class="tab-pane">
           <div class="card">
-            <div class="card-header no-print" style="flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; padding: 8px 14px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <h3 class="card-title" style="margin: 0; font-size: 15px; white-space: nowrap;">បញ្ជីរាយនាម និងព័ត៌មានលម្អិតសិស្ស</h3>
-                <span class="badge badge-primary" id="student-count-badge" style="font-size: 12px; padding: 3px 8px;">45 នាក់</span>
+            <div class="card-header no-print" style="flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 10px 16px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3 class="card-title" style="margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; color: #1e293b;">
+                  👥 បញ្ជីរាយនាម និងព័ត៌មានលម្អិតសិស្ស
+                </h3>
+                <span class="badge badge-primary" id="student-count-badge" style="font-size: 12.5px; padding: 4px 10px; font-weight: 600;">0 នាក់</span>
               </div>
-              <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
-                <!-- Group: Import (នាំចូល) -->
-                <div class="btn-group-cluster" style="padding: 2px 4px; gap: 3px;">
-                  <span class="cluster-label cluster-label-import" style="padding: 5px 8px; font-size: 12.5px;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    <span>នាំចូល:</span>
-                  </span>
-                  <div class="cluster-buttons" style="gap: 3px;">
-                    <input type="file" id="input-import-students-excel" accept=".xlsx,.xls,.csv" style="display: none;" />
-                    <button class="btn-tb btn-tb-teal" id="btn-import-students-excel" title="នាំចូលបញ្ជីសិស្សពីឯកសារ Excel (.xlsx, .xls) ឬ CSV" style="padding: 5px 10px; height: 35px; font-size: 12.5px;">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                      <span>នាំចូល Excel</span>
-                    </button>
-                    <button class="btn-tb btn-tb-green" id="btn-sync-students-gsheet" title="ទាញយកបញ្ជីសិស្សដោយផ្ទាល់ពី Google Sheets (Live Sync)" style="padding: 5px 10px; height: 35px; font-size: 12.5px;">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <span>Google Sheet</span>
-                    </button>
-                    <button class="btn-tb btn-tb-blue" id="btn-paste-students-excel" title="ចម្លងពី Excel ហើយបិទភ្ជាប់ (Paste) តាមជួរឈរនីមួយៗ ឬតារាងទាំងមូល ដើម្បីការពារកុំឱ្យខុសជួរ" style="padding: 5px 10px; height: 35px; font-size: 12.5px;">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                      <span>បិទភ្ជាប់ (Paste)</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Group: Export (នាំចេញ) -->
-                <div class="btn-group-cluster" style="padding: 2px 4px; gap: 3px;">
-                  <span class="cluster-label cluster-label-export" style="padding: 5px 8px; font-size: 12.5px;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>នាំចេញ:</span>
-                  </span>
-                  <div class="cluster-buttons" style="gap: 3px;">
-                    <button class="btn-tb btn-tb-green" id="btn-export-standard-excel" title="នាំចេញបញ្ជីរាយនាមសិស្សជា Excel" style="padding: 5px 10px; height: 35px; font-size: 12.5px;">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                      <span>នាំចេញ Excel</span>
-                    </button>
-                    <button class="btn-tb btn-tb-teal" id="btn-export-students-excel" title="នាំចេញព័ត៌មានពេញលេញជា Excel" style="padding: 5px 10px; height: 35px; font-size: 12.5px;">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                      <span>Excel ពេញលេញ</span>
-                    </button>
-                  </div>
-                </div>
-
-                <button class="btn btn-primary" id="btn-add-student" style="box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2); height: 35px; padding: 5px 10px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px;">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="btn-add-student" style="box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2); height: 35px; padding: 5px 12px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                   <span>+ បន្ថែមសិស្ស</span>
                 </button>
-                <button class="btn btn-success" id="btn-save-students" style="background: #16a34a; border-color: #16a34a; color: #fff; box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2); height: 35px; padding: 5px 10px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px;" title="រក្សាទុកបញ្ជីសិស្សទាំងអស់">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <button class="btn btn-success" id="btn-save-students" style="background: #16a34a; border-color: #16a34a; color: #fff; box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2); height: 35px; padding: 5px 12px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="រក្សាទុកបញ្ជីសិស្សទាំងអស់">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                   <span>រក្សាទុក</span>
                 </button>
-                <button class="btn btn-outline-danger" id="btn-clear-students" style="height: 35px; padding: 5px 10px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px;" title="សំអាតបញ្ជីសិស្សទាំងអស់ដើម្បីចាប់ផ្តើមថ្មី">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <button class="btn btn-outline-danger" id="btn-clear-students" style="height: 35px; padding: 5px 12px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="សំអាតបញ្ជីសិស្សទាំងអស់ដើម្បីចាប់ផ្តើមថ្មី">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   <span>សំអាតសិស្ស</span>
                 </button>
               </div>
             </div>
 
-            <!-- Action Strip: Sort & Print (Restored 17-Column Landscape Print) -->
-            <div class="action-toolbar-strip no-print">
-              <!-- Group 1: Sort (តម្រៀបឈ្មោះ) -->
-              <div class="btn-group-cluster">
-                <span class="cluster-label cluster-label-sort">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
-                  <span>តម្រៀប:</span>
-                </span>
-                <div class="cluster-buttons">
-                  <button class="btn-tb btn-tb-purple" id="btn-quick-sort-alphabet" title="ចុចដើម្បីតម្រៀបឈ្មោះតាមលំដាប់អក្សរក្រមខ្មែរ (ក-អ)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
-                    <span>🔤 អក្សរក្រម (ក-អ)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-rose" id="btn-quick-sort-female" title="តម្រៀបសិស្សស្រីមុន រួចតាមអក្សរក្រម (ក-អ)">
-                    <span>🚺 ស្រីមុន</span>
-                  </button>
-                </div>
-              </div>
+            <!-- Action Strip: Operation Filters & Date (កាលបរិច្ឆេទ, បោះពុម្ព, នាំចេញ, នាំចូល, តម្រៀប) -->
+            <div class="action-toolbar-strip no-print" style="padding: 8px 14px; gap: 10px; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <!-- Button: Date (កាលបរិច្ឆេទ) -->
+              <button class="btn-tb btn-tb-amber" id="btn-date-roster" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់តារាងរាយនាមសិស្ស" style="height: 38px; padding: 4px 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>📅 កាលបរិច្ឆេទ</span>
+              </button>
 
-              <!-- Group 2: Print & Date (បោះពុម្ព & កាលបរិច្ឆេទ) -->
-              <div class="btn-group-cluster">
+              <!-- Filter: Print (បោះពុម្ព) -->
+              <div class="filter-cluster filter-cluster-print" title="ជ្រើសរើសទម្រង់បោះពុម្ព">
                 <span class="cluster-label cluster-label-print">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   <span>បោះពុម្ព:</span>
                 </span>
-                <div class="cluster-buttons">
-                  <button class="btn-tb btn-tb-amber" id="btn-date-roster" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់តារាងរាយនាមសិស្ស">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span>កាលបរិច្ឆេទ</span>
-                  </button>
-                  <button class="btn-tb btn-tb-indigo" id="btn-print-two-col" title="បោះពុម្ពតារាងរាយនាមសិស្ស ២ ជួរ (A4 បញ្ឈ)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>តារាង ២ ជួរ (A4)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-teal" id="btn-print-students" title="បោះពុម្ពបញ្ជីរាយនាមសិស្ស ១៧ ជួរ (A4 ផ្តេក)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>តារាង ១៧ ជួរ (ផ្តេក)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-purple" id="btn-print-students-attendance-portrait" title="បោះពុម្ពតារាងតាមដានវត្តមាន ៣១ថ្ងៃ (A4 បញ្ឈ តែ១ទំព័រ តាមគំរូ)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>តារាងវត្តមាន (A4)</span>
-                  </button>
-                </div>
+                <select id="student-print-selector" class="select-action-filter" title="ជ្រើសរើសទម្រង់បោះពុម្ពតារាងសិស្ស">
+                  <option value="" disabled selected>🖨️ ជ្រើសរើសការបោះពុម្ព...</option>
+                  <option value="two_col">📑 តារាង ២ ជួរ (A4 បញ្ឈ)</option>
+                  <option value="landscape_17">📜 តារាង ១៧ ជួរ (A4 ផ្តេក)</option>
+                  <option value="attendance_portrait">📋 តារាងវត្តមាន (A4 បញ្ឈ)</option>
+                </select>
+              </div>
+
+              <!-- Filter: Export (នាំចេញ) -->
+              <div class="filter-cluster filter-cluster-export" title="ជ្រើសរើសទម្រង់នាំចេញ">
+                <span class="cluster-label cluster-label-export">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>នាំចេញ:</span>
+                </span>
+                <select id="student-export-selector" class="select-action-filter" title="ជ្រើសរើសទម្រង់នាំចេញឯកសារ Excel ឬ CSV">
+                  <option value="" disabled selected>📤 ជ្រើសរើសការនាំចេញ...</option>
+                  <option value="standard_excel">📗 នាំចេញ Excel (បញ្ជីរាយនាម)</option>
+                  <option value="full_excel">📘 នាំចេញ Excel (ព័ត៌មានពេញលេញ)</option>
+                  <option value="standard_csv">📄 នាំចេញជា CSV</option>
+                </select>
+              </div>
+
+              <!-- Filter: Import (នាំចូល) -->
+              <div class="filter-cluster filter-cluster-import" title="ជ្រើសរើសវិធីនាំចូលទិន្នន័យសិស្ស">
+                <span class="cluster-label cluster-label-import">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  <span>នាំចូល:</span>
+                </span>
+                <select id="student-import-selector" class="select-action-filter" title="ជ្រើសរើសវិធីនាំចូលទិន្នន័យសិស្ស">
+                  <option value="" disabled selected>📥 ជ្រើសរើសវិធីនាំចូល...</option>
+                  <option value="import_excel">📗 នាំចូលពី Excel (.xlsx, .csv)</option>
+                  <option value="sync_gsheet">🌐 ទាញយកពី Google Sheets</option>
+                  <option value="paste_excel">📋 បិទភ្ជាប់ពី Excel (Paste)</option>
+                  <option value="download_template">📥 ទាញយកតារាងគំរូពេញលេញ (Excel)</option>
+                </select>
+              </div>
+
+              <!-- Filter: Sort (តម្រៀប) -->
+              <div class="filter-cluster filter-cluster-sort" title="ជ្រើសរើសវិធីតម្រៀបឈ្មោះសិស្ស">
+                <span class="cluster-label cluster-label-sort">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
+                  <span>តម្រៀប:</span>
+                </span>
+                <select id="student-sort-selector" class="select-action-filter" title="តម្រៀបបញ្ជីឈ្មោះសិស្ស">
+                  <option value="khmer_asc">🔤 អក្សរក្រម (ក - អ)</option>
+                  <option value="female_first">🚺 សិស្សស្រីមុន (ក - អ)</option>
+                  <option value="male_first">🚹 សិស្សប្រុសមុន (ក - អ)</option>
+                  <option value="khmer_desc">🔤 អក្សរក្រមបញ្ច្រាស (អ - ក)</option>
+                  <option value="latin_asc">🔤 អក្សរឡាតាំង (A - Z)</option>
+                  <option value="id_asc">🔢 លេខសម្គាល់ដើម (ID)</option>
+                </select>
+              </div>
+
+              <!-- Hidden Preserved Action Elements (Ensures 100% backward compatibility for any script/triggers) -->
+              <div style="display: none;" aria-hidden="true">
+                <input type="file" id="input-import-students-excel" accept=".xlsx,.xls,.csv" />
+                <button type="button" id="btn-import-students-excel"></button>
+                <button type="button" id="btn-sync-students-gsheet"></button>
+                <button type="button" id="btn-paste-students-excel"></button>
+                <button type="button" id="btn-export-standard-excel"></button>
+                <button type="button" id="btn-export-students-excel"></button>
+                <button type="button" id="btn-export-standard-csv"></button>
+                <button type="button" id="btn-print-two-col"></button>
+                <button type="button" id="btn-print-students"></button>
+                <button type="button" id="btn-print-students-attendance-portrait"></button>
+                <button type="button" id="btn-quick-sort-alphabet"></button>
+                <button type="button" id="btn-quick-sort-female"></button>
               </div>
             </div>
 
@@ -371,7 +370,7 @@
                     <input type="text" id="student-search-input" placeholder="ស្វែងរកតាមឈ្មោះ, ភូមិ, ឃុំ, ស្រុក..." style="height: 34px; font-size: 13px;">
                   </div>
 
-                  <div style="display: flex; gap: 6px; align-items: center;">
+                  <div style="display: none !important; gap: 6px; align-items: center;" id="student-gender-filter-wrap">
                     <label style="font-size: 13px; font-weight: 600;">ភេទ:</label>
                     <select id="student-gender-filter" class="form-control" style="width: 100px; height: 34px; font-size: 13px;">
                       <option value="all">ទាំងអស់</option>
@@ -380,17 +379,7 @@
                     </select>
                   </div>
 
-                  <!-- Hidden Sort Selector Dropdown (Preserved for JS logic; user uses sort buttons in action bar) -->
-                  <select id="student-sort-selector" style="display: none;">
-                    <option value="khmer_asc">🔤 អក្សរក្រម (ក - អ)</option>
-                    <option value="khmer_desc">🔤 អក្សរក្រម (អ - ក)</option>
-                    <option value="female_first">🚺 ស្រីមុន (ក - អ)</option>
-                    <option value="male_first">🚹 ប្រុសមុន (ក - អ)</option>
-                    <option value="latin_asc">🔤 អក្សរឡាតាំង (A - Z)</option>
-                    <option value="id_asc">🔢 លេខសម្គាល់ដើម (ID)</option>
-                  </select>
-
-                  <div style="display: none; gap: 8px; align-items: center;" id="student-month-filter-wrap">
+                  <div style="display: none !important; gap: 8px; align-items: center;" id="student-month-filter-wrap">
                     <label style="font-size: 13px; font-weight: 600;">ពិន្ទុ & អវត្តមាន:</label>
                     <select id="student-month-filter" class="form-control" style="width: 155px; height: 34px; font-size: 13px;">
                       <option value="none">ដើមឆ្នាំ (គ្មានពិន្ទុ)</option>
@@ -570,60 +559,63 @@
               </div>
             </div>
 
-            <!-- Organized Action Strip: Print & Data Toolbars -->
-            <div class="action-toolbar-strip no-print">
-              <!-- Group 1: Print & Dates -->
-              <div class="btn-group-cluster">
+            <!-- Action Strip: Operation Filters & Date (កាលបរិច្ឆេទ, បោះពុម្ព, នាំចេញ, នាំចូល) -->
+            <div class="action-toolbar-strip no-print" style="padding: 8px 14px; gap: 10px; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <!-- Button: Date (កាលបរិច្ឆេទ) -->
+              <button class="btn-tb btn-tb-amber" id="btn-date-monthly-scores" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់ខែនេះ" style="height: 38px; padding: 4px 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>📅 កាលបរិច្ឆេទ</span>
+              </button>
+
+              <!-- Filter: Print (បោះពុម្ព) -->
+              <div class="filter-cluster filter-cluster-print" title="ជ្រើសរើសទម្រង់បោះពុម្ពពិន្ទុ">
                 <span class="cluster-label cluster-label-print">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   <span>បោះពុម្ព:</span>
                 </span>
-                <div class="cluster-buttons">
-                  <button class="btn-tb btn-tb-indigo" id="btn-open-landscape-scores" title="បោះពុម្ពតារាងស្រង់ពិន្ទុសិស្សប្រចាំខែ (ក្រដាសផ្តេក ដូចគំរូ PDF)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>តារាងស្រង់ពិន្ទុ (A4 ផ្តេក)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-blue" id="btn-open-score-sheet" title="បោះពុម្ពតារាងស្រង់ពិន្ទុ (A4 ១ទំព័រ) សម្រាប់កត់ត្រាពិន្ទុដោយដៃ ឬពិនិត្យ">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>សន្លឹកស្រង់ពិន្ទុ (A4 ១ទំព័រ)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-amber" id="btn-date-monthly-scores" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់ខែនេះ">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span>កាលបរិច្ឆេទ</span>
-                  </button>
-                </div>
+                <select id="monthly-scores-print-selector" class="select-action-filter" title="ជ្រើសរើសទម្រង់បោះពុម្ពពិន្ទុ">
+                  <option value="" disabled selected>🖨️ ជ្រើសរើសការបោះពុម្ព...</option>
+                  <option value="landscape_scores">📜 តារាងស្រង់ពិន្ទុ (A4 ផ្តេក)</option>
+                  <option value="score_sheet">📑 សន្លឹកស្រង់ពិន្ទុ (A4 ១ទំព័រ)</option>
+                </select>
               </div>
 
-              <!-- Group 2: Excel & Data -->
-              <div class="btn-group-cluster">
+              <!-- Filter: Export (នាំចេញ) -->
+              <div class="filter-cluster filter-cluster-export" title="ជ្រើសរើសទម្រង់នាំចេញពិន្ទុ">
                 <span class="cluster-label cluster-label-export">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                  <span>Excel / ទិន្នន័យ:</span>
+                  <span>នាំចេញ:</span>
                 </span>
-                <div class="cluster-buttons">
-                  <input type="file" id="input-import-scores-excel" accept=".xlsx,.xls,.csv" style="display: none;" />
-                  <button class="btn-tb btn-tb-teal" id="btn-import-scores-excel" title="នាំចូលពិន្ទុពីឯកសារ Excel (.xlsx, .xls) ឬ CSV">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    <span>នាំចូល Excel</span>
-                  </button>
-                  <button class="btn-tb btn-tb-green" id="btn-sync-scores-gsheet" title="ទាញយកពិន្ទុដោយផ្ទាល់ពី Google Sheets (Live Sync)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>Google Sheet</span>
-                  </button>
-                  <button class="btn-tb btn-tb-green" id="btn-export-scores-excel" title="នាំចេញតារាងពិន្ទុខែនេះជាឯកសារ Excel (.xlsx)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>នាំចេញពិន្ទុ (.xlsx)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-secondary" id="btn-export-score-sheet-excel" title="នាំចេញតារាងស្រង់ពិន្ទុជាឯកសារ Excel (.xlsx)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>នាំចេញសន្លឹកស្រង់ (.xlsx)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-secondary" id="btn-template-scores-excel" title="ទាញយកគំរូ Excel សម្រាប់បញ្ចូលពិន្ទុ">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>គំរូ Excel</span>
-                  </button>
-                </div>
+                <select id="monthly-scores-export-selector" class="select-action-filter" title="ជ្រើសរើសការនាំចេញពិន្ទុ">
+                  <option value="" disabled selected>📤 ជ្រើសរើសការនាំចេញ...</option>
+                  <option value="export_scores_excel">📗 នាំចេញពិន្ទុ (.xlsx)</option>
+                  <option value="export_score_sheet_excel">📄 នាំចេញសន្លឹកស្រង់ (.xlsx)</option>
+                </select>
               </div>
+
+              <!-- Filter: Import (នាំចូល) -->
+              <div class="filter-cluster filter-cluster-import" title="ជ្រើសរើសវិធីនាំចូលពិន្ទុ ឬទាញយកគំរូ">
+                <span class="cluster-label cluster-label-import">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  <span>នាំចូល:</span>
+                </span>
+                <select id="monthly-scores-import-selector" class="select-action-filter" title="ជ្រើសរើសវិធីនាំចូលពិន្ទុ">
+                  <option value="" disabled selected>📥 ជ្រើសរើសការនាំចូល...</option>
+                  <option value="import_excel">📥 នាំចូល Excel</option>
+                  <option value="sync_gsheet">🌐 Google Sheet (Sync)</option>
+                  <option value="download_template">📋 គំរូ Excel (ទាញយក)</option>
+                </select>
+              </div>
+
+              <!-- Hidden inputs and buttons for backward compatibility -->
+              <input type="file" id="input-import-scores-excel" accept=".xlsx,.xls,.csv" style="display: none;" />
+              <button type="button" id="btn-open-landscape-scores" style="display: none;"></button>
+              <button type="button" id="btn-open-score-sheet" style="display: none;"></button>
+              <button type="button" id="btn-import-scores-excel" style="display: none;"></button>
+              <button type="button" id="btn-sync-scores-gsheet" style="display: none;"></button>
+              <button type="button" id="btn-export-scores-excel" style="display: none;"></button>
+              <button type="button" id="btn-export-score-sheet-excel" style="display: none;"></button>
+              <button type="button" id="btn-template-scores-excel" style="display: none;"></button>
             </div>
 
             <div class="card-body" id="monthly-scores-table-container">
@@ -638,8 +630,8 @@
                 </button>
               </div>
 
-              <div class="table-responsive">
-                <table class="data-table">
+              <div class="table-responsive scores-table-wrapper" id="monthly-scores-table-wrapper">
+                <table class="data-table scores-data-table" id="monthly-scores-table">
                   <thead id="monthly-scores-thead">
                     <!-- Dynamic Headers with Subjects and Max scores -->
                   </thead>
@@ -677,13 +669,13 @@
               </div>
             </div>
             <div class="card-body">
-              <div class="table-responsive">
-                <table class="data-table">
+              <div class="table-responsive scores-table-wrapper" id="semester-scores-table-wrapper">
+                <table class="data-table scores-data-table" id="semester-scores-table">
                   <thead>
                     <tr>
-                      <th rowspan="2" class="text-center" style="width: 40px;">ល.រ</th>
-                      <th rowspan="2">គោត្តនាម និងនាម</th>
-                      <th rowspan="2" class="text-center" style="width: 50px;">ភេទ</th>
+                      <th rowspan="2" class="text-center score-sticky-col-1" style="width: 44px;">ល.រ</th>
+                      <th rowspan="2" class="score-sticky-col-2" style="width: 150px;">គោត្តនាម និងនាម</th>
+                      <th rowspan="2" class="text-center score-sticky-col-3" style="width: 48px;">ភេទ</th>
                       <th colspan="3" class="text-center" style="background: #e2e8f0;">ឆមាសទី១</th>
                       <th colspan="3" class="text-center" style="background: #e2e8f0;">ឆមាសទី២</th>
                       <th colspan="4" class="text-center" style="background: #fef3c7;">លទ្ធផលប្រចាំឆ្នាំ</th>
@@ -744,72 +736,78 @@
               </div>
             </div>
 
-            <!-- Organized Action Strip: Print & Excel for Attendance -->
-            <div class="action-toolbar-strip no-print">
-              <!-- Group 1: Print & Date -->
-              <div class="btn-group-cluster">
+            <!-- Action Strip: Operation Filters & Date for Attendance -->
+            <div class="action-toolbar-strip no-print" style="padding: 8px 14px; gap: 10px; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <!-- Button: Date (កាលបរិច្ឆេទ) -->
+              <button class="btn-tb btn-tb-amber" id="btn-date-attendance" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់តារាងវត្តមាន" style="height: 38px; padding: 4px 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>📅 កាលបរិច្ឆេទ</span>
+              </button>
+
+              <!-- Filter: Print (បោះពុម្ព) -->
+              <div class="filter-cluster filter-cluster-print" title="ជ្រើសរើសទម្រង់បោះពុម្ពវត្តមាន">
                 <span class="cluster-label cluster-label-print">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   <span>បោះពុម្ព:</span>
                 </span>
-                <div class="cluster-buttons">
-                  <button class="btn-tb btn-tb-indigo" id="btn-print-attendance" title="បោះពុម្ភតារាងស្រង់អវត្តមានប្រចាំខែ (A4 Landscape)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>បោះពុម្ភតារាងវត្តមាន</span>
-                  </button>
-                  <button class="btn-tb btn-tb-purple" id="btn-print-attendance-portrait" title="បោះពុម្ពតារាងតាមដានវត្តមាន ៣១ថ្ងៃ (A4 បញ្ឈ តែ១ទំព័រ តាមគំរូ)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>តារាងវត្តមាន (A4 បញ្ឈ)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-amber" id="btn-date-attendance" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់តារាងវត្តមាន">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span>កាលបរិច្ឆេទ</span>
-                  </button>
-                  <button class="btn-tb btn-tb-rose" id="btn-manage-holidays" title="បន្ថែម និងគ្រប់គ្រងថ្ងៃឈប់សម្រាកតាមប្រតិទិនសុរិយគតិ (Solar Holidays)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>ថ្ងៃឈប់សម្រាក</span>
-                  </button>
-                  <button class="btn-tb btn-tb-purple" id="btn-parent-invitation-modal" title="បង្កើត និងបោះពុម្ពលិខិតអញ្ជើញអាណាព្យាបាលសិស្ស (ករណីអវត្តមានច្រើន)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    <span>លិខិតអញ្ជើញអាណាព្យាបាល</span>
-                  </button>
-                </div>
+                <select id="attendance-print-selector" class="select-action-filter" title="ជ្រើសរើសទម្រង់បោះពុម្ពវត្តមាន">
+                  <option value="" disabled selected>🖨️ ជ្រើសរើសការបោះពុម្ព...</option>
+                  <option value="print_landscape">📊 បោះពុម្ភតារាងវត្តមាន (A4 ផ្តេក)</option>
+                  <option value="print_portrait">📄 តារាងវត្តមាន (A4 បញ្ឈ ៣១ថ្ងៃ)</option>
+                  <option value="parent_invitation">✉️ លិខិតអញ្ជើញអាណាព្យាបាល</option>
+                </select>
               </div>
 
-              <!-- Group 2: Excel & Data -->
-              <div class="btn-group-cluster">
+              <!-- Filter: Export (នាំចេញ) -->
+              <div class="filter-cluster filter-cluster-export" title="ជ្រើសរើសទម្រង់នាំចេញវត្តមានជា Excel">
                 <span class="cluster-label cluster-label-export">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                  <span>Excel:</span>
+                  <span>នាំចេញ:</span>
                 </span>
-                <div class="cluster-buttons">
-                  <input type="file" id="input-import-attendance-excel" accept=".xlsx,.xls,.csv" style="display: none;" />
-                  <button class="btn-tb btn-tb-teal" id="btn-import-attendance-excel" title="នាំចូលអវត្តមានពីឯកសារ Excel (.xlsx, .xls) ឬ CSV">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    <span>នាំចូល Excel</span>
-                  </button>
-                  <button class="btn-tb btn-tb-green" id="btn-sync-attendance-gsheet" title="ទាញយកអវត្តមានដោយផ្ទាល់ពី Google Sheets (Live Sync)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>Google Sheet</span>
-                  </button>
-                  <button class="btn-tb btn-tb-blue" id="btn-paste-attendance-excel" title="ចម្លងពី Excel ហើយបិទភ្ជាប់ (Paste) ចូលតារាងវត្តមាន">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    <span>បិទភ្ជាប់ (Paste)</span>
-                  </button>
-                  <button class="btn-tb btn-tb-green" id="btn-export-attendance-excel" title="នាំចេញតារាងអវត្តមានជាឯកសារ Excel (.xlsx)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>នាំចេញ Excel</span>
-                  </button>
-                  <button class="btn-tb btn-tb-teal" id="btn-export-attendance-portrait-excel" title="នាំចេញតារាងវត្តមាន ៣១ថ្ងៃ (A4 បញ្ឈ) ជា Excel (.xlsx)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>Excel វត្តមាន A4</span>
-                  </button>
-                  <button class="btn-tb btn-tb-secondary" id="btn-template-attendance-excel" title="ទាញយកគំរូវត្តមានសិស្ស Excel">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>គំរូ Excel</span>
-                  </button>
-                </div>
+                <select id="attendance-export-selector" class="select-action-filter" title="ជ្រើសរើសការនាំចេញវត្តមានជា Excel">
+                  <option value="" disabled selected>📤 ជ្រើសរើសការនាំចេញ...</option>
+                  <option value="export_attendance_excel">📗 នាំចេញ Excel (តារាងស្រង់ពេញលេញ)</option>
+                  <option value="export_attendance_portrait_excel">📄 Excel វត្តមាន A4 (៣១ថ្ងៃ)</option>
+                </select>
               </div>
+
+              <!-- Filter: Import (នាំចូល) -->
+              <div class="filter-cluster filter-cluster-import" title="ជ្រើសរើសវិធីនាំចូលវត្តមាន">
+                <span class="cluster-label cluster-label-import">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  <span>នាំចូល:</span>
+                </span>
+                <select id="attendance-import-selector" class="select-action-filter" title="ជ្រើសរើសវិធីនាំចូលវត្តមាន">
+                  <option value="" disabled selected>📥 ជ្រើសរើសវិធីនាំចូល...</option>
+                  <option value="import_excel">📥 នាំចូល Excel</option>
+                  <option value="sync_gsheet">🌐 Google Sheet (Sync)</option>
+                  <option value="paste_excel">📋 បិទភ្ជាប់ (Paste ពី Excel)</option>
+                  <option value="download_template">📋 គំរូ Excel (ទាញយក)</option>
+                </select>
+              </div>
+
+              <!-- Button: Holidays (ថ្ងៃឈប់សម្រាក) -->
+              <button class="btn-tb btn-tb-rose" id="btn-manage-holidays" title="បន្ថែម និងគ្រប់គ្រងថ្ងៃឈប់សម្រាកតាមប្រតិទិនសុរិយគតិ (Solar Holidays)" style="height: 38px; padding: 4px 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>🌸 ថ្ងៃឈប់សម្រាក</span>
+              </button>
+
+              <!-- Button: Parent Invitation (លិខិតអញ្ជើញអាណាព្យាបាល) -->
+              <button class="btn-tb btn-tb-purple" id="btn-parent-invitation-modal" title="បង្កើត និងបោះពុម្ពលិខិតអញ្ជើញអាណាព្យាបាលសិស្ស (ករណីអវត្តមានច្រើន)" style="height: 38px; padding: 4px 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <span>✉️ លិខិតអញ្ជើញ</span>
+              </button>
+
+              <!-- Hidden inputs and buttons for backward compatibility -->
+              <input type="file" id="input-import-attendance-excel" accept=".xlsx,.xls,.csv" style="display: none;" />
+              <button type="button" id="btn-print-attendance" style="display: none;"></button>
+              <button type="button" id="btn-print-attendance-portrait" style="display: none;"></button>
+              <button type="button" id="btn-import-attendance-excel" style="display: none;"></button>
+              <button type="button" id="btn-sync-attendance-gsheet" style="display: none;"></button>
+              <button type="button" id="btn-paste-attendance-excel" style="display: none;"></button>
+              <button type="button" id="btn-export-attendance-excel" style="display: none;"></button>
+              <button type="button" id="btn-export-attendance-portrait-excel" style="display: none;"></button>
+              <button type="button" id="btn-template-attendance-excel" style="display: none;"></button>
             </div>
             <div class="card-body" style="padding: 12px 14px;">
               <!-- Collapsible Excel Paste Panel for Attendance -->
@@ -1127,8 +1125,8 @@
                   <button type="button" class="honor-format-btn" data-format="podium" id="btn-format-podium" title="វេទិកាពានរង្វាន់ Podium Top 3/5">
                     🏅 ទម្រង់ទី ៣ ៖ វេទិកា Podium
                   </button>
-                  <button type="button" class="honor-format-btn" data-format="certificate" id="btn-format-certificate" title="ប័ណ្ណសរសើរសិស្សពូកែ">
-                    📜 ទម្រង់ទី ៤ ៖ ប័ណ្ណសរសើរ
+                  <button type="button" class="honor-format-btn" data-format="certificate" id="btn-format-certificate" title="ប័ណ្ណសរសើរសិស្សពូកែ (ក្រដាស A5 ផ្ដេក)">
+                    📜 ទម្រង់ទី ៤ ៖ ប័ណ្ណសរសើរ (A5 ផ្ដេក)
                   </button>
                 </div>
               </div>
@@ -3344,6 +3342,12 @@
               📋 បិទភ្ជាប់ (Paste)
             </button>
           </div>
+          <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+            <a href="https://docs.google.com/spreadsheets/d/1u26uPGwUiXzIrDDmyaDBHwDyvKBqcrRDXnlTk-uZKVI/edit" target="_blank" rel="noopener" style="color: #0284c7; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              <span>🌐 បើក Google Sheet រួមគ្រប់ថ្នាក់លើ Drive (Master Sheet) ↗</span>
+            </a>
+            <span style="color: #64748b;">(មានគ្រប់ថ្នាក់ ១២A, ៧F, ១១F, ១២B, ១០A, ៩A, ៨A)</span>
+          </div>
         </div>
 
         <!-- Sync Type Selector -->
@@ -3386,9 +3390,14 @@
 
       <!-- Modal Footer -->
       <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; background: #f8fafc;">
-        <button type="button" class="btn btn-outline-secondary" id="btn-gsheet-open-template" style="font-size: 12.5px;">
-          📥 ទាញយកគំរូ Excel/Sheet
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <a href="https://docs.google.com/spreadsheets/d/1u26uPGwUiXzIrDDmyaDBHwDyvKBqcrRDXnlTk-uZKVI/edit" target="_blank" rel="noopener" class="btn btn-outline-primary" style="font-size: 12.5px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            🌐 បើក Google Sheet រួម ↗
+          </a>
+          <button type="button" class="btn btn-outline-secondary" id="btn-gsheet-open-template" style="font-size: 12.5px;">
+            📥 ទាញយកគំរូ Excel
+          </button>
+        </div>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="btn btn-secondary" id="modal-gsheet-cancel">បោះបង់</button>
           <button type="button" class="btn btn-success" id="btn-gsheet-do-sync" style="background: #047857; border-color: #047857; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 8px 18px;">
@@ -3450,11 +3459,11 @@
   <!-- Scripts -->
   <script src="js/xlsx.full.min.js"></script>
   <script src="js/data.js?v=19.3"></script>
-  <script src="js/calculations.js?v=19.3"></script>
+  <script src="js/calculations.js?v=20.25"></script>
   <script src="js/storage.js?v=20.0"></script>
   <script src="js/license.js?v=19.6"></script>
   <script src="js/updater.js?v=19.6"></script>
-  <script src="js/gsheet.js?v=19.6"></script>
-  <script src="js/app.js?v=20.3"></script>
+  <script src="js/gsheet.js?v=20.36"></script>
+  <script src="js/app.js?v=20.36"></script>
 </body>
 </html>
