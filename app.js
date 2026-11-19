@@ -19703,8 +19703,36 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     setupGraceMarksEvents() {
-      const btnOpen = document.getElementById('btn-open-grace-marks');
-      const btnRankingOpen = document.getElementById('btn-ranking-open-grace-marks');
+      // Dynamic button creation fallback in case index.html is an older version
+      let btnOpen = document.getElementById('btn-open-grace-marks');
+      let btnRankingOpen = document.getElementById('btn-ranking-open-grace-marks');
+
+      if (!btnOpen) {
+        const qsBtn = document.getElementById('btn-open-quick-score');
+        if (qsBtn && qsBtn.parentElement) {
+          btnOpen = document.createElement('button');
+          btnOpen.className = 'btn btn-purple';
+          btnOpen.id = 'btn-open-grace-marks';
+          btnOpen.style.cssText = 'background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(124,58,237,0.25);';
+          btnOpen.title = 'សារ៉េពិន្ទុអនុគ្រោះដើម្បីជួយស្រោចស្រង់សិស្សដែលធ្លាក់មធ្យមភាគ';
+          btnOpen.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> <span>🪄 សារ៉េពិន្ទុអនុគ្រោះ</span>';
+          qsBtn.parentElement.insertBefore(btnOpen, qsBtn);
+        }
+      }
+
+      if (!btnRankingOpen) {
+        const printBtn = document.getElementById('btn-print-monthly-ranking');
+        if (printBtn && printBtn.parentElement) {
+          btnRankingOpen = document.createElement('button');
+          btnRankingOpen.className = 'btn btn-purple';
+          btnRankingOpen.id = 'btn-ranking-open-grace-marks';
+          btnRankingOpen.style.cssText = 'background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(124,58,237,0.25);';
+          btnRankingOpen.title = 'សារ៉េពិន្ទុអនុគ្រោះដើម្បីជួយស្រោចស្រង់សិស្សដែលធ្លាក់មធ្យមភាគ';
+          btnRankingOpen.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> <span>🪄 សារ៉េពិន្ទុអនុគ្រោះ</span>';
+          printBtn.parentElement.insertBefore(btnRankingOpen, printBtn);
+        }
+      }
+
       [btnOpen, btnRankingOpen].forEach(btn => {
         if (btn) {
           btn.addEventListener('click', () => {
@@ -20265,9 +20293,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       }
 
-      // 3. Lock original rank on EVERY student in this period
+      // 3. Lock original rank on EVERY student in this period & lock tested subjects to prevent any divisor jump
       if (!this.state.scoresByPeriod[periodId]) {
         this.state.scoresByPeriod[periodId] = {};
+      }
+
+      // Pre-lock tested subject IDs before applying grace marks
+      const preTestedSubs = Calculations.getTestedSubjects(this.state.subjects || [], this.state.scoresByPeriod[periodId] || {}, null, this.state.students);
+      if (Array.isArray(preTestedSubs) && preTestedSubs.length > 0) {
+        this.state.scoresByPeriod[periodId]._testedSubjectIds = preTestedSubs.map(s => s.id);
       }
 
       preData.forEach(st => {
