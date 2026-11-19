@@ -9543,4 +9543,16 @@ body.is-printing-tab.is-lower-grade .col-roster-student-phone { width: 5.2% !imp
   background: rgba(255, 255, 255, 0.2);
 }
 
+.btn-purple {
+  background-color: #7c3aed;
+  border-color: #6d28d9;
+  color: #ffffff !important;
+}
+
+.btn-purple:hover {
+  background-color: #6d28d9;
+  border-color: #5b21b6;
+  color: #ffffff !important;
+}
+
 

@@ -1,8 +1,12 @@
 {
-  "version": "20.39",
+  "version": "20.44",
   "releaseDate": "2026-11-19",
-  "title": "កំណែទម្រង់ v20.39៖ ធ្វើសមកាលកម្មស្វ័យប្រវត្តិនូវមុខវិជ្ជា និងពិន្ទុអតិបរមា រវាងកញ្ចប់ និងប្រភេទថ្នាក់ (វិទ្យាសាស្ត្រ និងសង្គម)",
-  "changelog": "បន្ថែមមុខងារធ្វើសមកាលកម្មស្វ័យប្រវត្តិ (Auto-sync) នូវមុខវិជ្ជា និងពិន្ទុអតិបរិមា នៅពេលកែប្រែថ្នាក់ ឬប្តូរប្រភេទថ្នាក់រវាងថ្នាក់វិទ្យាសាស្ត្រ និងថ្នាក់សង្គម ធានាឱ្យពិន្ទុអតិបរមាត្រូវតាមកញ្ចប់ស្តង់ដារ ១០០% (ថ្នាក់សង្គម ខ្មែរ ១២៥, គណិត/ពលរដ្ឋ/ប្រវត្តិ/ភូមិ ៧៥, រូប/គីមី/ជីវ ៥០ | ថ្នាក់វិទ្យាសាស្ត្រ គណិត ១២៥, រូប/គីមី/ជីវ/ខ្មែរ ៧៥, ពលរដ្ឋ/ប្រវត្តិ/ភូមិ ៥០)។",
+  "title": "កំណែទម្រង់ v20.44៖ កែសម្រួលដោះស្រាយបញ្ហាមធ្យមភាគធ្លាក់ចុះ ដោយកំណត់បន្ថែមពិន្ទុតែលើមុខវិជ្ជាដែលមានការប្រឡងជាក់ស្តែង (Tested Subjects Only)",
+  "changelog": "ដោះស្រាយបញ្ហាមធ្យមភាគធ្លាក់ចុះពេលដំឡើងពិន្ទុ ដោយប្រព័ន្ធបន្ថែមពិន្ទុតែលើមុខវិជ្ជាណាដែលមានការប្រឡងជាក់ស្តែងប៉ុណ្ណោះ (មិនបន្ថែមលើមុខវិជ្ជាដែលមិនបានប្រឡងដូចជា ICT ឬ កីឡា ដែលនាំឱ្យឡើងតួចែកមេគុណ)។ ធានាថាមធ្យមភាគសិស្សកើនឡើងត្រឹមត្រូវ ១០០% តាមចំនួនកំណត់ (+1.00 ឬតាមតម្រូវការ) ព្រមទាំងរក្សាចំណាត់ថ្នាក់ដើមដដែល។",
   "appJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/js/app.js",
-  "stylesCssUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/css/styles.css"
+  "stylesCssUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/css/styles.css",
+  "calculationsJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/js/calculations.js",
+  "fallbackAppJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/app.js",
+  "fallbackStylesCssUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/styles.css",
+  "fallbackCalculationsJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/calculations.js"
 }

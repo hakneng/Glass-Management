@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ប្រព័ន្ធគ្រប់គ្រងពិន្ទុសិស្ស និងព្រឹត្តិបត្រឌីជីថល (ថ្នាក់ទី១២A)</title>
-  <link rel="stylesheet" href="css/styles.css?v=20.39">
+  <link rel="stylesheet" href="css/styles.css?v=20.44">
   <link rel="icon" type="image/x-icon" href="app-icon.ico">
   <link rel="apple-touch-icon" href="app-icon.png">
 </head>
@@ -544,6 +544,10 @@
                 </div>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn btn-purple" id="btn-open-grace-marks" style="background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(124,58,237,0.25);" title="សារ៉េពិន្ទុអនុគ្រោះដើម្បីជួយស្រោចស្រង់សិស្សដែលធ្លាក់មធ្យមភាគ">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  <span>🪄 សារ៉េពិន្ទុអនុគ្រោះ</span>
+                </button>
                 <button class="btn btn-primary" id="btn-open-quick-score" style="background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(37,99,235,0.2);" title="បើកផ្ទាំងបញ្ចូលពិន្ទុរហ័សតាមមុខវិជ្ជា">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                   <span>⚡ បញ្ចូលពិន្ទុរហ័ស</span>
@@ -862,6 +866,10 @@
             <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 20px;">
               <h3 class="card-title" style="margin: 0; font-size: 16px;">🏆 តារាងចំណាត់ថ្នាក់សិស្សប្រចាំខែ</h3>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn btn-purple" id="btn-ranking-open-grace-marks" style="background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(124,58,237,0.25);" title="សារ៉េពិន្ទុអនុគ្រោះដើម្បីជួយស្រោចស្រង់សិស្សដែលធ្លាក់មធ្យមភាគ">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  <span>🪄 សារ៉េពិន្ទុអនុគ្រោះ</span>
+                </button>
                 <button class="btn btn-warning" id="btn-date-monthly-ranking" style="background: #f59e0b; border-color: #d97706; color: #fff; font-weight: 600;" title="កំណត់កាលបរិច្ឆេទចន្ទគតិ និងសុរិយគតិសម្រាប់ខែនេះ">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                   <span>📅 កាលបរិច្ឆេទ</span>
@@ -2182,6 +2190,204 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       MODAL: SMART GRACE MARKS / SCORE ADJUSTMENT (សារ៉េពិន្ទុអនុគ្រោះសិស្សធ្លាក់)
+       ========================================== -->
+  <div class="modal-overlay" id="modal-grace-marks" style="display: none; z-index: 1050;">
+    <div class="modal-box" style="max-width: 960px; width: 95vw; max-height: 94vh; display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div class="modal-header" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff; padding: 14px 20px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">🪄</span>
+          <div>
+            <h3 class="modal-title" style="color: #fff; margin: 0; font-size: 16.5px; font-weight: 700;">ប្រព័ន្ធសារ៉េពិន្ទុអនុគ្រោះ និងដំឡើងមធ្យមភាគសិស្ស (Smart Grace Marks & Score Boost)</h3>
+            <div style="font-size: 12px; opacity: 0.9; margin-top: 2px;">ស្រោចស្រង់សិស្សធ្លាក់ឱ្យជាប់ ឬដំឡើងមធ្យមភាគសិស្សទាំងអស់ក្នុងថ្នាក់ (ធានារក្សាចំណាត់ថ្នាក់ដើម ១០០%)</div>
+          </div>
+        </div>
+        <button class="modal-close" id="modal-grace-marks-close" style="color: #fff; font-size: 24px; background: transparent; border: none; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
+        
+        <!-- Top Stats Row (Current Status) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">ខែដែលកំពុងសារ៉េពិន្ទុ</div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                <select id="gm-month-selector" class="form-control" style="font-size: 13.5px; font-weight: 700; color: #1e40af; background: #eff6ff; padding: 2px 6px; height: 30px; border-radius: 6px; border-color: #93c5fd;"></select>
+              </div>
+            </div>
+            <span style="font-size: 22px;">📅</span>
+          </div>
+
+          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">សិស្សសរុប / សិស្សជាប់</div>
+              <div id="gm-pass-count-display" style="font-size: 14.5px; font-weight: 700; color: #16a34a; margin-top: 2px;">... នាក់</div>
+            </div>
+            <span style="font-size: 22px;">✅</span>
+          </div>
+
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 11.5px; color: #991b1b; font-weight: 600;">សិស្សធ្លាក់មធ្យមភាគបច្ចុប្បន្ន</div>
+              <div id="gm-fail-count-display" style="font-size: 16px; font-weight: 800; color: #dc2626; margin-top: 2px;">... នាក់</div>
+            </div>
+            <span style="font-size: 22px;">⚠️</span>
+          </div>
+
+          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">ពិន្ទុមធ្យមភាគកំណត់ជាប់</div>
+              <div id="gm-pass-score-display" style="font-size: 14.5px; font-weight: 700; color: #2563eb; margin-top: 2px;">≥ 25.00</div>
+            </div>
+            <span style="font-size: 22px;">🎯</span>
+          </div>
+        </div>
+
+        <!-- Settings Config Card -->
+        <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <h4 style="margin: 0 0 12px 0; font-size: 13.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+            <span>⚙️ ការកំណត់គោលដៅ និងរូបមន្តបន្ថែមពិន្ទុ</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <!-- Goal Mode Selection -->
+            <div>
+              <label style="font-size: 13px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">
+                ១. គោលដៅសារ៉េពិន្ទុដែលចង់បាន ៖
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                  <input type="radio" name="gm-mode" value="target_count" checked id="gm-mode-target-count">
+                  <span>កំណត់ចំនួនអ្នកធ្លាក់សរុបឱ្យនៅសល់ត្រឹម ៖</span>
+                  <input type="number" id="gm-target-fail-count" min="0" max="100" value="9" style="width: 70px; padding: 3px 8px; font-weight: 700; text-align: center; border-radius: 6px; border: 1px solid #94a3b8; font-size: 13.5px;">
+                  <span>នាក់</span>
+                </label>
+                <div id="gm-rescue-hint" style="font-size: 12px; color: #7c3aed; font-weight: 600; margin-left: 22px;">
+                  👉 ត្រូវជួយស្រោចស្រង់សិស្សចំនួន <span id="gm-rescue-count-badge" style="background: #ede9fe; padding: 2px 8px; border-radius: 10px; font-weight: 700;">6 នាក់</span> ដែលកៀកជាប់បំផុត
+                </div>
+
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-top: 2px;">
+                  <input type="radio" name="gm-mode" value="max_deficit" id="gm-mode-max-deficit">
+                  <span>ជួយសិស្សណាដែលខ្វះមធ្យមភាគមិនលើសពី ៖</span>
+                  <input type="number" id="gm-max-deficit-val" min="0.1" max="10" step="0.1" value="1.0" style="width: 70px; padding: 3px 8px; font-weight: 700; text-align: center; border-radius: 6px; border: 1px solid #94a3b8; font-size: 13.5px;">
+                  <span>ពិន្ទុ</span>
+                </label>
+
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-top: 4px; padding: 6px 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+                  <input type="radio" name="gm-mode" value="all_students_boost" id="gm-mode-all-boost">
+                  <span style="font-weight: 700; color: #166534;">🌟 ដំឡើងមធ្យមភាគសិស្សទាំងអស់ក្នុងថ្នាក់ ៖</span>
+                  <span style="font-weight: 700; color: #15803d;">+</span>
+                  <input type="number" id="gm-all-boost-val" min="0.1" max="10" step="0.1" value="1.0" style="width: 65px; padding: 3px 6px; font-weight: 700; text-align: center; border-radius: 6px; border: 1.5px solid #16a34a; font-size: 13.5px; color: #15803d; background: #fff;">
+                  <span style="font-size: 12px; color: #166534;">មធ្យមភាគ</span>
+                </label>
+                <div id="gm-all-boost-hint" style="font-size: 11.5px; color: #15803d; font-weight: 600; margin-left: 22px; display: none;">
+                  👉 សិស្សគ្រប់រូបក្នុងថ្នាក់នឹងកើនមធ្យមភាគឡើងស្មើៗគ្នា ដោយ<strong>រក្សាចំណាត់ថ្នាក់ដើម ១០០%</strong>។
+                </div>
+              </div>
+            </div>
+
+            <!-- Subject Boosting Rules -->
+            <div>
+              <label style="font-size: 13px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">
+                ២. វិធីសាស្ត្របន្ថែមពិន្ទុលើមុខវិជ្ជា ៖
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <label style="font-size: 12.5px; color: #475569; display: block; margin-bottom: 3px;">អាទិភាពមុខវិជ្ជា៖</label>
+                  <select id="gm-subject-strategy" class="form-control" style="font-size: 13px; padding: 4px 8px; height: 35px; border-radius: 6px;">
+                    <option value="fail_lowest_first" selected>ថែមលើមុខវិជ្ជាដែលធ្លាក់ខ្លាំងជាងគេ (Low Score First)</option>
+                    <option value="highest_coef">ថែមលើមុខវិជ្ជាដែលមានមេគុណខ្ពស់ជាងគេ (High Coef First)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style="font-size: 12.5px; color: #475569; display: block; margin-bottom: 3px;">កម្រិតពិន្ទុបន្ថែមអតិបរមាក្នុងមួយមុខវិជ្ជា៖</label>
+                  <select id="gm-max-per-subject" class="form-control" style="font-size: 13px; padding: 4px 8px; height: 35px; border-radius: 6px;">
+                    <option value="5">មិនឱ្យលើសពី ៥ ពិន្ទុក្នុងមួយមុខ</option>
+                    <option value="10" selected>មិនឱ្យលើសពី ១០ ពិន្ទុក្នុងមួយមុខ (ណែនាំ)</option>
+                    <option value="15">មិនឱ្យលើសពី ១៥ ពិន្ទុក្នុងមួយមុខ</option>
+                    <option value="999">គ្មានដែនកំណត់ (រហូតដល់ពេញ Max)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calculate Preview Button -->
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-primary" id="btn-gm-calculate-preview" style="background: #7c3aed; border-color: #6d28d9; font-weight: 700; padding: 6px 16px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>👁️ គណនា និងពិនិត្យលទ្ធផលជាមុន (Calculate Preview)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Results Container -->
+        <div id="gm-preview-container" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 9px 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #166534;">
+            <span style="font-size: 16px;">🛡️</span>
+            <div><strong>ការធានារក្សាចំណាត់ថ្នាក់ដើម ១០០% (Strict Rank-Preservation)：</strong> ចំណាត់ថ្នាក់សិស្សទាំងអស់ត្រូវបានចាក់សោរក្សាដដែល មិនមានការប្រែប្រួល ឬរត់កាត់មុខសិស្សដទៃឡើយ។</div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: #1e293b;">
+              📋 តារាងលទ្ធផលសាកល្បងមុននឹងអនុវត្ត (<span id="gm-preview-students-count">0</span> នាក់ នឹងត្រូវបានស្រោចស្រង់)
+            </h4>
+            <span id="gm-preview-status-pill" class="badge badge-secondary" style="font-size: 12px; padding: 4px 10px;">
+              មិនទាន់គណនា
+            </span>
+          </div>
+
+          <!-- Table preview -->
+          <div style="max-height: 280px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+              <thead style="background: #f1f5f9; position: sticky; top: 0; z-index: 2;">
+                <tr>
+                  <th style="padding: 8px; text-align: center; width: 45px;">ល.រ</th>
+                  <th style="padding: 8px; text-align: left;">គោត្តនាម-នាម</th>
+                  <th style="padding: 8px; text-align: center; width: 50px;">ភេទ</th>
+                  <th style="padding: 8px; text-align: center; width: 120px;">ចំណាត់ថ្នាក់</th>
+                  <th style="padding: 8px; text-align: center; width: 95px;">មធ្យមភាគដើម</th>
+                  <th style="padding: 8px; text-align: center; width: 95px;">មធ្យមភាគថ្មី</th>
+                  <th style="padding: 8px; text-align: left;">មុខវិជ្ជា និងពិន្ទុដែលត្រូវបានបន្ថែម (+ពិន្ទុ)</th>
+                  <th style="padding: 8px; text-align: center; width: 80px;">លទ្ធផល</th>
+                </tr>
+              </thead>
+              <tbody id="gm-preview-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">
+                    សូមចុចប៊ូតុង <strong>«គណនា និងពិនិត្យលទ្ធផលជាមុន»</strong> ដើម្បីមើលសិស្សដែលនឹងត្រូវស្រោចស្រង់
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="modal-footer" style="padding: 12px 20px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn btn-outline-danger" id="btn-gm-undo" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+          <span>↩️ ស្តារពិន្ទុដើមវិញ (Undo / Revert)</span>
+        </button>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" id="modal-grace-marks-cancel-btn">បោះបង់</button>
+          <button type="button" class="btn btn-success" id="btn-gm-apply" style="background: #16a34a; border-color: #16a34a; font-weight: 700; padding: 7px 18px; display: inline-flex; align-items: center; gap: 6px;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>💾 អនុវត្ត និងរក្សាទុកពិន្ទុថ្មី</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Modal: Add / Edit Class -->
   <div class="modal-overlay" id="modal-class-form" style="display: none;">
     <div class="modal-box" style="max-width: 580px; width: 95vw; display: flex; flex-direction: column;">
@@ -3461,11 +3667,11 @@
   <!-- Scripts -->
   <script src="js/xlsx.full.min.js"></script>
   <script src="js/data.js?v=19.3"></script>
-  <script src="js/calculations.js?v=20.25"></script>
+  <script src="js/calculations.js?v=20.44"></script>
   <script src="js/storage.js?v=20.0"></script>
   <script src="js/license.js?v=19.6"></script>
   <script src="js/updater.js?v=19.6"></script>
-  <script src="js/gsheet.js?v=20.39"></script>
-  <script src="js/app.js?v=20.39"></script>
+  <script src="js/gsheet.js?v=20.44"></script>
+  <script src="js/app.js?v=20.44"></script>
 </body>
 </html>

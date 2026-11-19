@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.setupBackupEvents();
       this.setupCleanupAndSaveEvents();
       this.setupQuickScoreEvents();
+      this.setupGraceMarksEvents();
       this.setupTableDateEvents();
       this.setupHonorRollEvents();
       this.setupScoreSheetEvents();
@@ -19691,6 +19692,658 @@ document.addEventListener('DOMContentLoaded', () => {
       this.saveState();
       this.renderQuickScoreModalTable();
       this.showToast(`🗑️ បានសំអាតពិន្ទុមុខវិជ្ជា "${sName}" រួចរាល់!`, 'info');
+    },
+
+    /* =========================================================
+     * 12.5 SMART GRACE MARKS / SCORE ADJUSTMENT SYSTEM (សារ៉េពិន្ទុអនុគ្រោះ)
+     * ========================================================= */
+    graceMarksState: {
+      activePeriodId: null,
+      previewResults: null
+    },
+
+    setupGraceMarksEvents() {
+      const btnOpen = document.getElementById('btn-open-grace-marks');
+      const btnRankingOpen = document.getElementById('btn-ranking-open-grace-marks');
+      [btnOpen, btnRankingOpen].forEach(btn => {
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const period = (btn === btnRankingOpen)
+              ? (document.getElementById('ranking-month-selector')?.value || this.rankingMonthId || this.currentMonthId)
+              : (document.getElementById('month-selector')?.value || this.currentMonthId);
+            this.openGraceMarksModal(period);
+          });
+        }
+      });
+
+      const closeBtn = document.getElementById('modal-grace-marks-close');
+      const cancelBtn = document.getElementById('modal-grace-marks-cancel-btn');
+      const modal = document.getElementById('modal-grace-marks');
+
+      if (closeBtn) closeBtn.addEventListener('click', () => this.closeGraceMarksModal());
+      if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeGraceMarksModal());
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) this.closeGraceMarksModal();
+        });
+      }
+
+      const btnPreview = document.getElementById('btn-gm-calculate-preview');
+      if (btnPreview) {
+        btnPreview.addEventListener('click', () => this.calculateGraceMarksPreview());
+      }
+
+      const btnApply = document.getElementById('btn-gm-apply');
+      if (btnApply) {
+        btnApply.addEventListener('click', () => this.applyGraceMarks());
+      }
+
+      const btnUndo = document.getElementById('btn-gm-undo');
+      if (btnUndo) {
+        btnUndo.addEventListener('click', () => this.undoGraceMarks());
+      }
+
+      const targetInput = document.getElementById('gm-target-fail-count');
+      if (targetInput) {
+        targetInput.addEventListener('input', () => {
+          targetInput._hasUserEdited = true;
+          this.refreshGraceMarksRescueHint();
+        });
+      }
+
+      const modeRadios = document.querySelectorAll('input[name="gm-mode"]');
+      modeRadios.forEach(r => {
+        r.addEventListener('change', (e) => {
+          const allHint = document.getElementById('gm-all-boost-hint');
+          const rescueHint = document.getElementById('gm-rescue-hint');
+          if (e.target.value === 'all_students_boost') {
+            if (allHint) allHint.style.display = 'block';
+            if (rescueHint) rescueHint.style.display = 'none';
+          } else {
+            if (allHint) allHint.style.display = 'none';
+            if (rescueHint) rescueHint.style.display = 'block';
+          }
+        });
+      });
+
+      const allBoostInput = document.getElementById('gm-all-boost-val');
+      if (allBoostInput) {
+        allBoostInput.addEventListener('focus', () => {
+          const r = document.getElementById('gm-mode-all-boost');
+          if (r) {
+            r.checked = true;
+            r.dispatchEvent(new Event('change'));
+          }
+        });
+      }
+    },
+
+    openGraceMarksModal(targetPeriod = null) {
+      const modal = document.getElementById('modal-grace-marks');
+      if (!modal) return;
+
+      const periodId = targetPeriod || this.currentMonthId || document.getElementById('month-selector')?.value || 'm_dec';
+      this.graceMarksState.activePeriodId = periodId;
+      this.graceMarksState.previewResults = null;
+
+      // Populate month selector inside modal
+      const mSelect = document.getElementById('gm-month-selector');
+      if (mSelect && Array.isArray(this.state.months)) {
+        mSelect.innerHTML = this.state.months.map(m => 
+          `<option value="${m.id}" ${m.id === periodId ? 'selected' : ''}>${m.name}</option>`
+        ).join('');
+        if (!mSelect._hasChangeListener) {
+          mSelect.addEventListener('change', (e) => {
+            this.openGraceMarksModal(e.target.value);
+          });
+          mSelect._hasChangeListener = true;
+        }
+      }
+
+      this.updateGraceMarksStats(periodId);
+
+      // Reset preview table
+      const tbody = document.getElementById('gm-preview-table-body');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">
+              សូមចុចប៊ូតុង <strong>«គណនា និងពិនិត្យលទ្ធផលជាមុន»</strong> ដើម្បីមើលសិស្សដែលនឹងត្រូវស្រោចស្រង់
+            </td>
+          </tr>
+        `;
+      }
+      const countEl = document.getElementById('gm-preview-students-count');
+      if (countEl) countEl.textContent = '0';
+      const statusPill = document.getElementById('gm-preview-status-pill');
+      if (statusPill) {
+        statusPill.className = 'badge badge-secondary';
+        statusPill.textContent = 'មិនទាន់គណនា';
+      }
+
+      modal.style.display = 'flex';
+    },
+
+    closeGraceMarksModal() {
+      const modal = document.getElementById('modal-grace-marks');
+      if (modal) modal.style.display = 'none';
+      this.graceMarksState.previewResults = null;
+    },
+
+    refreshGraceMarksRescueHint() {
+      const periodId = this.graceMarksState.activePeriodId || this.currentMonthId;
+      const rules = this.state.gradingRules || this.state.schoolConfig?.gradingRules;
+      const passScore = (rules && typeof rules.passScore === 'number') ? rules.passScore : 25;
+      const periodData = window.Calculations ? Calculations.computePeriodData(periodId, this.state) : [];
+      const failCount = periodData.filter(st => {
+        const hasScores = Object.values(st.scores || {}).some(v => parseFloat(v) > 0);
+        return (hasScores || st.total > 0 || st.avg > 0) && st.avg < passScore && st.avg > 0;
+      }).length;
+
+      const targetInput = document.getElementById('gm-target-fail-count');
+      const currentTarget = targetInput ? (parseInt(targetInput.value, 10) || 0) : 0;
+      const toRescue = Math.max(0, failCount - currentTarget);
+      const rescueBadge = document.getElementById('gm-rescue-count-badge');
+      if (rescueBadge) rescueBadge.textContent = `${toRescue} នាក់`;
+    },
+
+    updateGraceMarksStats(periodId) {
+      const mObj = (this.state.months || []).find(m => m.id === periodId) || { name: periodId };
+      const monthDisp = document.getElementById('gm-current-month-display');
+      if (monthDisp) monthDisp.textContent = mObj.name || periodId;
+
+      const rules = this.state.gradingRules || this.state.schoolConfig?.gradingRules;
+      const passScore = (rules && typeof rules.passScore === 'number') ? rules.passScore : 25;
+      const passScoreDisp = document.getElementById('gm-pass-score-display');
+      if (passScoreDisp) passScoreDisp.textContent = `≥ ${passScore.toFixed(2)}`;
+
+      const periodData = window.Calculations ? Calculations.computePeriodData(periodId, this.state) : [];
+      const activeList = periodData.filter(st => {
+        const hasScores = Object.values(st.scores || {}).some(v => parseFloat(v) > 0);
+        return hasScores || (st.total > 0) || (st.avg > 0);
+      });
+
+      const passList = activeList.filter(st => st.avg >= passScore);
+      const failList = activeList.filter(st => st.avg < passScore && st.avg > 0);
+
+      const passDisp = document.getElementById('gm-pass-count-display');
+      if (passDisp) passDisp.textContent = `${passList.length} / ${activeList.length} នាក់ (${activeList.length > 0 ? Math.round((passList.length / activeList.length) * 100) : 0}%)`;
+
+      const failDisp = document.getElementById('gm-fail-count-display');
+      if (failDisp) failDisp.textContent = `${failList.length} នាក់ (${activeList.length > 0 ? Math.round((failList.length / activeList.length) * 100) : 0}%)`;
+
+      // Update target fail default and hint
+      const targetInput = document.getElementById('gm-target-fail-count');
+      const rescueHint = document.getElementById('gm-rescue-hint');
+      const rescueBadge = document.getElementById('gm-rescue-count-badge');
+
+      if (targetInput) {
+        if (!targetInput._hasUserEdited || parseInt(targetInput.value, 10) > failList.length) {
+          const suggestedTarget = Math.max(0, failList.length - 6);
+          targetInput.value = suggestedTarget;
+        }
+        const currentTarget = parseInt(targetInput.value, 10) || 0;
+        const toRescue = Math.max(0, failList.length - currentTarget);
+        if (rescueBadge) rescueBadge.textContent = `${toRescue} នាក់`;
+        if (rescueHint) {
+          rescueHint.style.display = failList.length > 0 ? 'block' : 'none';
+          rescueHint.innerHTML = `👉 ត្រូវជួយស្រោចស្រង់សិស្សចំនួន <span id="gm-rescue-count-badge" style="background: #ede9fe; color: #7c3aed; padding: 2px 8px; border-radius: 10px; font-weight: 700;">${toRescue} នាក់</span> ដែលកៀកជាប់បំផុត`;
+        }
+
+        // If all students in the class passed (0 failures), auto-switch to all_students_boost
+        if (failList.length === 0 && activeList.length > 0) {
+          const allBoostRadio = document.getElementById('gm-mode-all-boost');
+          const allHint = document.getElementById('gm-all-boost-hint');
+          if (allBoostRadio) {
+            allBoostRadio.checked = true;
+          }
+          if (allHint) {
+            allHint.style.display = 'block';
+            allHint.innerHTML = `🎉 <strong>សិស្សទាំងអស់បានប្រឡងជាប់មធ្យមភាគ ១០០% រួចហើយ!</strong> ប្រព័ន្ធបានជ្រើសរើសជម្រើសនេះជូនលោកគ្រូ-អ្នកគ្រូ ដើម្បីដំឡើងមធ្យមភាគសិស្សទាំងអស់ស្មើៗគ្នា ដោយ<strong>រក្សាចំណាត់ថ្នាក់ដើម ១០០%</strong>។`;
+          }
+        }
+      }
+
+      // Check undo backup
+      const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
+      const backup = curCls?.graceMarksBackup?.[periodId];
+      const undoBtn = document.getElementById('btn-gm-undo');
+      if (undoBtn) {
+        if (backup) {
+          undoBtn.disabled = false;
+          undoBtn.style.opacity = '1';
+          undoBtn.title = `ស្តារពិន្ទុដើមវិញ (រក្សាទុកនៅ ${backup.dateStr || ''})`;
+        } else {
+          undoBtn.disabled = true;
+          undoBtn.style.opacity = '0.5';
+          undoBtn.title = 'មិនមានទិន្នន័យដើមដែលត្រូវស្តារឡើងវិញទេ';
+        }
+      }
+    },
+
+    calculateGraceMarksPreview() {
+      const periodId = this.graceMarksState.activePeriodId || this.currentMonthId;
+      const rules = this.state.gradingRules || this.state.schoolConfig?.gradingRules;
+      const passScore = (rules && typeof rules.passScore === 'number') ? rules.passScore : 25;
+      const subjects = this.state.subjects || [];
+      const isG12 = Calculations.isGrade12(this.state);
+      const scoresObj = this.state.scoresByPeriod[periodId] || {};
+
+      const periodData = Calculations.computePeriodData(periodId, this.state);
+      const activeList = periodData.filter(st => {
+        const hasScores = Object.values(st.scores || {}).some(v => parseFloat(v) > 0);
+        return hasScores || (st.total > 0) || (st.avg > 0);
+      });
+
+      // Sort all active students descending by total/avg so the natural original rank hierarchy is strictly established
+      activeList.sort((a, b) => {
+        const valA = (typeof a.total === 'number' && a.total > 0) ? a.total : a.avg;
+        const valB = (typeof b.total === 'number' && b.total > 0) ? b.total : b.avg;
+        return valB - valA;
+      });
+
+      const mode = document.querySelector('input[name="gm-mode"]:checked')?.value || 'target_count';
+      let candidates = [];
+      const isAllBoost = (mode === 'all_students_boost');
+      let passList = [];
+      let failList = [];
+
+      if (isAllBoost) {
+        if (activeList.length === 0) {
+          alert('ℹ️ មិនមានទិន្នន័យពិន្ទុសិស្សក្នុងខែនេះទេ!');
+          return;
+        }
+        candidates = [...activeList];
+      } else {
+        passList = activeList.filter(st => st.avg >= passScore);
+        failList = activeList.filter(st => st.avg < passScore && st.avg > 0);
+        if (failList.length === 0) {
+          const allRadio = document.getElementById('gm-mode-all-boost');
+          if (allRadio) {
+            allRadio.checked = true;
+            allRadio.dispatchEvent(new Event('change'));
+          }
+          alert('ℹ️ ក្នុងខែនេះ សិស្សទាំងអស់បានប្រឡងជាប់មធ្យមភាគ ១០០% រួចហើយ (គ្មានសិស្សធ្លាក់ទេ)!\n\n👉 ប្រព័ន្ធបានប្តូរទៅជម្រើស «ដំឡើងមធ្យមភាគសិស្សទាំងអស់ក្នុងថ្នាក់» ជូនលោកគ្រូ-អ្នកគ្រូរួចរាល់ហើយ។ សូមពិនិត្យចំនួនមធ្យមភាគដែលចង់ដំឡើង (+...) រួចចុចប៊ូតុង «គណនា និងពិនិត្យលទ្ធផលជាមុន» ម្តងទៀត។');
+          return;
+        }
+
+        if (mode === 'target_count') {
+          const targetFail = parseInt(document.getElementById('gm-target-fail-count').value, 10);
+          const rescueCount = Math.max(0, failList.length - targetFail);
+          candidates = failList.slice(0, rescueCount);
+        } else {
+          const maxDeficit = parseFloat(document.getElementById('gm-max-deficit-val').value) || 1.0;
+          candidates = failList.filter(st => (passScore - st.avg) <= (maxDeficit + 0.0001));
+        }
+
+        if (candidates.length === 0) {
+          alert('ℹ️ មិនមានសិស្សណាស្ថិតក្នុងលក្ខខណ្ឌដែលត្រូវស្រោចស្រង់ឡើយ! សូមពិនិត្យចំនួនសិស្សធ្លាក់គោលដៅ ឬគម្លាតពិន្ទុដែលបានកំណត់។');
+          return;
+        }
+      }
+
+      const strategy = document.getElementById('gm-subject-strategy').value || 'fail_lowest_first';
+      const maxPerSub = parseFloat(document.getElementById('gm-max-per-subject').value) || 10;
+      const allBoostAmount = isAllBoost ? (parseFloat(document.getElementById('gm-all-boost-val')?.value) || 1.0) : 0;
+      const lowestPassTotal = (!isAllBoost && passList.length > 0) ? passList[passList.length - 1].total : 999999;
+
+      // 1. Identify which subjects were ACTUALLY tested across the class in this period
+      const testedSubsList = Calculations.getTestedSubjects(subjects, scoresObj, null, this.state.students);
+      const testedSubIdSet = new Set(testedSubsList.map(s => s.id));
+
+      const previewResults = [];
+
+      candidates.forEach((cand, candIdx) => {
+        const origScores = scoresObj[cand.id] || cand.scores || {};
+        const workingScores = { ...origScores };
+        const additions = {};
+
+        // Eligible subjects: MUST be tested in this period AND student must already have a score > 0 in it!
+        // Strictly prevents adding points to untested subjects (like ICT or PE) which causes the divisor to jump and average to drop!
+        let eligibleSubs = subjects.filter(sub => {
+          if (sub.includeInTotal === false) return false;
+          if (testedSubIdSet.size > 0 && !testedSubIdSet.has(sub.id)) return false;
+          const sc = parseFloat(origScores[sub.id]) || 0;
+          if (sc <= 0) return false;
+          if (isG12 && Calculations.isEnglishSubject(sub) && (rules?.applyEnglishBonusRule !== false)) {
+            if (sc <= 25) return false;
+          }
+          return true;
+        });
+
+        // Compute current average & total
+        let curTotal = Calculations.calculateTotal(workingScores, subjects, rules, isG12, false, false);
+        let curAvg = Calculations.calculateAverage(curTotal, subjects, workingScores, rules, false, isG12, scoresObj, false);
+
+        // Sort subjects according to strategy
+        if (strategy === 'fail_lowest_first') {
+          eligibleSubs.sort((a, b) => {
+            const valA = parseFloat(workingScores[a.id]) || 0;
+            const valB = parseFloat(workingScores[b.id]) || 0;
+            const pctA = a.max > 0 ? valA / a.max : 1;
+            const pctB = b.max > 0 ? valB / b.max : 1;
+            return pctA - pctB;
+          });
+        } else if (strategy === 'highest_coef') {
+          eligibleSubs.sort((a, b) => (b.coef || 1) - (a.coef || 1));
+        }
+
+        // Divisor of the student's tested subjects
+        const div = cand.divisor || Calculations.getTotalCoefficient(subjects, origScores, false, rules, isG12, scoresObj, this.state.students) || (isG12 ? 13.5 : 10);
+
+        if (isAllBoost) {
+          // Class-wide Boost mode: add exactly allBoostAmount average to this student
+          const targetPointsToAdd = allBoostAmount * div;
+          let currentTotalAdded = 0;
+
+          // Pass 1: distribute within maxPerSub across tested subjects with room
+          for (const sub of eligibleSubs) {
+            if (currentTotalAdded >= targetPointsToAdd - 0.01) break;
+
+            const curVal = parseFloat(workingScores[sub.id]) || 0;
+            const subMax = typeof sub.max === 'number' ? sub.max : 50;
+            const roomInSub = Math.max(0, subMax - curVal);
+            const roomInAllowance = Math.max(0, maxPerSub - (additions[sub.id] || 0));
+            const availableRaw = Math.min(roomInSub, roomInAllowance);
+            if (availableRaw <= 0) continue;
+
+            const pointsNeeded = targetPointsToAdd - currentTotalAdded;
+            let rawAdd = Math.min(availableRaw, Math.ceil(pointsNeeded * 2) / 2);
+            if (currentTotalAdded + rawAdd > targetPointsToAdd) {
+              rawAdd = Math.floor((targetPointsToAdd - currentTotalAdded) * 2) / 2;
+            }
+
+            if (rawAdd > 0) {
+              workingScores[sub.id] = parseFloat((curVal + rawAdd).toFixed(2));
+              additions[sub.id] = parseFloat(((additions[sub.id] || 0) + rawAdd).toFixed(2));
+              currentTotalAdded = parseFloat((currentTotalAdded + rawAdd).toFixed(2));
+            }
+          }
+
+          // Pass 2: if still deficit remaining (e.g. maxPerSub was too small or subjects were near max),
+          // relax maxPerSub across remaining tested subjects that have room, ensuring the target boost is 100% achieved!
+          if (currentTotalAdded < targetPointsToAdd - 0.01) {
+            for (const sub of eligibleSubs) {
+              if (currentTotalAdded >= targetPointsToAdd - 0.01) break;
+
+              const curVal = parseFloat(workingScores[sub.id]) || 0;
+              const subMax = typeof sub.max === 'number' ? sub.max : 50;
+              const roomInSub = Math.max(0, subMax - curVal);
+              if (roomInSub <= 0) continue;
+
+              const pointsNeeded = targetPointsToAdd - currentTotalAdded;
+              let rawAdd = Math.min(roomInSub, Math.ceil(pointsNeeded * 2) / 2);
+              if (currentTotalAdded + rawAdd > targetPointsToAdd) {
+                rawAdd = Math.floor((targetPointsToAdd - currentTotalAdded) * 2) / 2;
+              }
+
+              if (rawAdd > 0) {
+                workingScores[sub.id] = parseFloat((curVal + rawAdd).toFixed(2));
+                additions[sub.id] = parseFloat(((additions[sub.id] || 0) + rawAdd).toFixed(2));
+                currentTotalAdded = parseFloat((currentTotalAdded + rawAdd).toFixed(2));
+              }
+            }
+          }
+        } else {
+          // Grace marks rescue mode with strict ceiling
+          const maxAllowedTotal = (candIdx === 0) ? lowestPassTotal : previewResults[candIdx - 1].newTotal;
+          let iterations = 0;
+          const maxIterations = 50;
+
+          while (curAvg < passScore && curTotal < maxAllowedTotal && iterations < maxIterations) {
+            iterations++;
+            let pointsAddedInPass = false;
+
+            for (const sub of eligibleSubs) {
+              if (curAvg >= passScore || curTotal >= maxAllowedTotal) break;
+
+              const curVal = parseFloat(workingScores[sub.id]) || 0;
+              const addedSoFar = additions[sub.id] || 0;
+              const subMax = typeof sub.max === 'number' ? sub.max : 50;
+              const roomInSub = Math.max(0, subMax - curVal);
+              const roomInAllowance = Math.max(0, maxPerSub - addedSoFar);
+              const availableRaw = Math.min(roomInSub, roomInAllowance);
+              if (availableRaw <= 0) continue;
+
+              const neededTotal = passScore * div;
+              const deficitTotal = Math.max(0, neededTotal - curTotal);
+              const maxCanAddToTotal = Math.max(0, maxAllowedTotal - curTotal);
+              const targetTotalAdd = Math.min(deficitTotal, maxCanAddToTotal);
+
+              if (targetTotalAdd <= 0) break;
+
+              let stepRaw = Math.min(availableRaw, Math.ceil(targetTotalAdd * 2) / 2);
+              if (curTotal + stepRaw > maxAllowedTotal) {
+                stepRaw = Math.floor((maxAllowedTotal - curTotal) * 2) / 2;
+              }
+
+              if (stepRaw <= 0) continue;
+
+              workingScores[sub.id] = parseFloat((curVal + stepRaw).toFixed(2));
+              additions[sub.id] = parseFloat((addedSoFar + stepRaw).toFixed(2));
+              pointsAddedInPass = true;
+
+              curTotal = Calculations.calculateTotal(workingScores, subjects, rules, isG12, false, false);
+              curAvg = Calculations.calculateAverage(curTotal, subjects, workingScores, rules, false, isG12, scoresObj, false);
+            }
+
+            if (!pointsAddedInPass) break;
+          }
+        }
+
+        // Compute final total and average
+        curTotal = Calculations.calculateTotal(workingScores, subjects, rules, isG12, false, false);
+        curAvg = Calculations.calculateAverage(curTotal, subjects, workingScores, rules, false, isG12, scoresObj, false);
+
+        // Failsafe guarantee: new average must NEVER be lower than old average!
+        if (curAvg < cand.avg) {
+          console.warn(`[GraceMarks] Failsafe: ${cand.name} average dropped (${cand.avg} -> ${curAvg}), reverting.`);
+          Object.assign(workingScores, origScores);
+          curTotal = cand.total;
+          curAvg = cand.avg;
+        }
+
+        if (Object.keys(additions).length > 0) {
+          previewResults.push({
+            id: cand.id,
+            name: cand.name,
+            gender: cand.gender,
+            preservedRank: cand.rank,
+            oldAvg: cand.avg,
+            oldTotal: cand.total,
+            newAvg: curAvg,
+            newTotal: curTotal,
+            isPassedNow: curAvg >= passScore,
+            additions: additions,
+            workingScores: workingScores
+          });
+        }
+      });
+
+            this.graceMarksState.previewResults = previewResults;
+      this.renderGraceMarksPreviewTable(previewResults, isAllBoost ? 0 : failList.length, isAllBoost, allBoostAmount);
+    },
+
+    renderGraceMarksPreviewTable(results, totalFailedCount, isAllBoost = false, allBoostAmount = 0) {
+      const tbody = document.getElementById('gm-preview-table-body');
+      const countEl = document.getElementById('gm-preview-students-count');
+      const statusPill = document.getElementById('gm-preview-status-pill');
+
+      if (countEl) countEl.textContent = results.length;
+
+      if (statusPill) {
+        if (isAllBoost) {
+          statusPill.className = 'badge badge-success';
+          statusPill.textContent = `🌟 សិស្សទាំងអស់ ${results.length} នាក់ ត្រូវបានដំឡើងមធ្យមភាគ (+${allBoostAmount.toFixed(2)}) • រក្សាចំណាត់ថ្នាក់ ១០០%`;
+        } else {
+          const passedCount = results.filter(r => r.isPassedNow).length;
+          const remainingFailed = Math.max(0, totalFailedCount - passedCount);
+          statusPill.className = passedCount > 0 ? 'badge badge-success' : 'badge badge-warning';
+          statusPill.textContent = `សិស្សធ្លាក់នឹងធ្លាក់ចុះពី ${totalFailedCount} នាក់ មកសល់ ${remainingFailed} នាក់ (ស្រោចស្រង់បាន ${passedCount} នាក់ • រក្សាចំណាត់ថ្នាក់ ១០០%)`;
+        }
+      }
+
+      if (!tbody) return;
+
+      if (results.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 25px; color: #dc2626;">
+              ⚠️ មិនអាចបន្ថែមពិន្ទុបានទេ ដោយសារបានកំណត់កម្រិតពិន្ទុបន្ថែមទាបពេក ឬពិន្ទុមុខវិជ្ជាពេញពិដាន។
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const subjectsMap = new Map((this.state.subjects || []).map(s => [s.id, s.name]));
+
+      tbody.innerHTML = results.map((r, idx) => {
+        const changesHtml = Object.entries(r.additions).map(([subId, pts]) => {
+          const subName = subjectsMap.get(subId) || subId;
+          const oldPt = (r.workingScores[subId] - pts).toFixed(1).replace(/\.0$/, '');
+          const newPt = r.workingScores[subId].toFixed(1).replace(/\.0$/, '');
+          return `<span style="background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 11.5px; margin-right: 4px; display: inline-block; margin-bottom: 2px;">
+            ${subName}: ${oldPt} ➔ <strong>${newPt}</strong> (<span style="color: #16a34a;">+${pts}</span>)
+          </span>`;
+        }).join('');
+
+        const statusTag = r.isPassedNow 
+          ? `<span class="badge badge-success" style="font-weight: 700;">✅ ជាប់</span>`
+          : `<span class="badge badge-warning" style="font-weight: 700;">⚠️ នៅខ្វះ</span>`;
+
+        return `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="text-align: center; padding: 8px; font-weight: 600; color: #64748b;">${idx + 1}</td>
+            <td style="padding: 8px; font-weight: 700; color: #1e293b;">${r.name}</td>
+            <td style="text-align: center; padding: 8px; color: #64748b;">${r.gender || '-'}</td>
+            <td style="text-align: center; padding: 8px;">
+              <span style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
+                <span>🔒 លេខ ${r.preservedRank}</span>
+                <small style="color: #6366f1;">(រក្សាដដែល)</small>
+              </span>
+            </td>
+            <td style="text-align: center; padding: 8px; font-weight: 700; color: #dc2626; background: #fef2f2;">${r.oldAvg.toFixed(2)}</td>
+            <td style="text-align: center; padding: 8px; font-weight: 800; color: #16a34a; background: #f0fdf4;">${r.newAvg.toFixed(2)}</td>
+            <td style="padding: 8px;">${changesHtml}</td>
+            <td style="text-align: center; padding: 8px;">${statusTag}</td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    applyGraceMarks() {
+      const results = this.graceMarksState.previewResults;
+      if (!Array.isArray(results) || results.length === 0) {
+        alert('⚠️ សូមចុចប៊ូតុង «គណនា និងពិនិត្យលទ្ធផលជាមុន» ដើម្បីផ្ទៀងផ្ទាត់សិស្សជាមុនសិន!');
+        return;
+      }
+
+      const periodId = this.graceMarksState.activePeriodId || this.currentMonthId;
+      const mObj = (this.state.months || []).find(m => m.id === periodId) || { name: periodId };
+
+      if (!confirm(`តើលោកគ្រូពិតជាចង់អនុវត្តការសារ៉េពិន្ទុអនុគ្រោះចំពោះសិស្សទាំង ${results.length} នាក់ ក្នុង ${mObj.name} នេះមែនទេ?\n\n🛡️ ការធានា៖ ចំណាត់ថ្នាក់សិស្សទាំងអស់ត្រូវបានចាក់សោរក្សាដដែល ១០០% មិនមានការប្រែប្រួល ឬរត់កាត់មុខគ្នាឡើយ។\n(ប្រព័ន្ធនឹងរក្សាទុកពិន្ទុដើមជាស្វ័យប្រវត្តិ លោកគ្រូអាចចុច Undo ស្តារពិន្ទុដើមវិញបានគ្រប់ពេល)`)) {
+        return;
+      }
+
+      // 1. Capture exact original ranks for ALL students in this period
+      const preData = Calculations.computePeriodData(periodId, this.state);
+      const originalRanks = {};
+      preData.forEach(st => {
+        originalRanks[st.id] = st.rank;
+      });
+
+      // 2. Backup original scores and rankings
+      const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
+      if (curCls) {
+        if (!curCls.graceMarksBackup) curCls.graceMarksBackup = {};
+        curCls.graceMarksBackup[periodId] = {
+          timestamp: Date.now(),
+          dateStr: new Date().toLocaleString('km-KH'),
+          scores: JSON.parse(JSON.stringify(this.state.scoresByPeriod[periodId] || {})),
+          monthlyRankings: JSON.parse(JSON.stringify(this.state.monthlyRankings?.[periodId] || []))
+        };
+      }
+
+      // 3. Lock original rank on EVERY student in this period
+      if (!this.state.scoresByPeriod[periodId]) {
+        this.state.scoresByPeriod[periodId] = {};
+      }
+
+      preData.forEach(st => {
+        if (!this.state.scoresByPeriod[periodId][st.id]) {
+          this.state.scoresByPeriod[periodId][st.id] = {};
+        }
+        this.state.scoresByPeriod[periodId][st.id].lockedRank = originalRanks[st.id];
+      });
+
+      // 4. Apply bumped scores for candidates with preserved ranks
+      results.forEach(r => {
+        Object.assign(this.state.scoresByPeriod[periodId][r.id], r.workingScores);
+        this.state.scoresByPeriod[periodId][r.id].lockedRank = r.preservedRank || originalRanks[r.id];
+      });
+
+      // 5. Update state.monthlyRankings with strictly preserved ranks
+      if (!this.state.monthlyRankings) this.state.monthlyRankings = {};
+      this.state.monthlyRankings[periodId] = preData.map(st => {
+        const cand = results.find(c => c.id === st.id);
+        return {
+          id: st.id,
+          name: st.name,
+          gender: st.gender,
+          total: cand ? cand.newTotal : st.total,
+          avg: cand ? cand.newAvg : st.avg,
+          grade: cand ? (cand.isPassedNow ? 'E' : st.grade) : st.grade,
+          rank: originalRanks[st.id]
+        };
+      });
+
+      if (curCls) {
+        if (!curCls.scoresByPeriod) curCls.scoresByPeriod = {};
+        curCls.scoresByPeriod[periodId] = this.state.scoresByPeriod[periodId];
+        curCls.monthlyRankings = this.state.monthlyRankings;
+      }
+
+      // 6. Save state & re-render
+      this.saveState();
+      this.renderCurrentView();
+
+      this.showToast(`✅ បានសារ៉េពិន្ទុអនុគ្រោះដោយជោគជ័យ! ចំណាត់ថ្នាក់សិស្សទាំងអស់ត្រូវបានធានារក្សាដដែល ១០០% មិនមានការប្រែប្រួលឡើយ។`, 'success');
+      this.closeGraceMarksModal();
+    },
+
+    undoGraceMarks() {
+      const periodId = this.graceMarksState.activePeriodId || this.currentMonthId;
+      const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
+      const backup = curCls?.graceMarksBackup?.[periodId];
+
+      if (!backup || !backup.scores) {
+        alert('ℹ️ មិនមានទិន្នន័យពិន្ទុដើមដែលត្រូវស្តារឡើងវិញសម្រាប់ខែនេះឡើយ!');
+        return;
+      }
+
+      const mObj = (this.state.months || []).find(m => m.id === periodId) || { name: periodId };
+
+      if (!confirm(`តើលោកគ្រូពិតជាចង់ស្តារពិន្ទុដើមវិញ មុនពេលសារ៉េពិន្ទុអនុគ្រោះក្នុង ${mObj.name} មែនទេ?\n(ទិន្នន័យត្រូវបានរក្សាទុកនៅ៖ ${backup.dateStr || ''})`)) {
+        return;
+      }
+
+      this.state.scoresByPeriod[periodId] = JSON.parse(JSON.stringify(backup.scores));
+      if (backup.monthlyRankings) {
+        if (!this.state.monthlyRankings) this.state.monthlyRankings = {};
+        this.state.monthlyRankings[periodId] = JSON.parse(JSON.stringify(backup.monthlyRankings));
+      }
+      if (curCls) {
+        if (!curCls.scoresByPeriod) curCls.scoresByPeriod = {};
+        curCls.scoresByPeriod[periodId] = this.state.scoresByPeriod[periodId];
+        if (backup.monthlyRankings) curCls.monthlyRankings = this.state.monthlyRankings;
+        delete curCls.graceMarksBackup[periodId];
+      }
+
+      this.saveState();
+      this.renderCurrentView();
+      this.showToast(`↩️ បានស្តារពិន្ទុដើម និងចំណាត់ថ្នាក់ដើមវិញដោយជោគជ័យសម្រាប់ ${mObj.name}!`, 'info');
+      this.openGraceMarksModal(periodId);
     },
 
     /* =========================================================
