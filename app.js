@@ -5324,15 +5324,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const scoreInputs = row.querySelectorAll('.score-input');
       const inputScores = {};
+      let hasAnyEnteredInput = false;
       scoreInputs.forEach(inp => {
         const sub = inp.getAttribute('data-subject-id');
-        const val = parseFloat(inp.value);
-        if (!isNaN(val)) inputScores[sub] = val;
+        const valStr = inp.value !== undefined && inp.value !== null ? String(inp.value).trim() : '';
+        if (valStr !== '') {
+          const val = parseFloat(valStr);
+          if (!isNaN(val)) {
+            inputScores[sub] = val;
+            hasAnyEnteredInput = true;
+          }
+        }
       });
 
       // Merge with student's period scores in state
       const periodScores = this.state.scoresByPeriod[this.currentMonthId]?.[studentId] || {};
-      const mergedScores = { ...periodScores, ...inputScores };
+      const cleanPeriodScores = { ...periodScores };
+      if (hasAnyEnteredInput) {
+        delete cleanPeriodScores.total;
+        delete cleanPeriodScores.avg;
+      }
+      const mergedScores = { ...cleanPeriodScores, ...inputScores };
       if (mergedScores.khmer_essay !== undefined || mergedScores.khmer_dictation !== undefined) {
         const essayVal = parseFloat(mergedScores.khmer_essay) || 0;
         const dictVal = parseFloat(mergedScores.khmer_dictation) || 0;
@@ -10940,7 +10952,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="g12-header">
               <div class="g12-header-top">
                 <div class="g12-header-left">
-                  <div class="g12-line">ខេត្ត ព្រៃវែង</div>
+                  <div class="g12-line">${cfg.province ? (cfg.province.startsWith('ខេត្ត') ? cfg.province : 'ខេត្ត ' + cfg.province) : 'ខេត្ត ព្រៃវែង'}</div>
                   <div class="g12-line">${cfg.ministry || 'មន្ទីរ អប់រំ យុវជន និងកីឡា ខេត្ត ព្រៃវែង'}</div>
                   <div class="g12-line">${cfg.schoolName || 'វិទ្យាល័យ មិត្តភាពខ្មែរ-ជប៉ុន'}</div>
                   <div class="g12-line">ថ្នាក់ វិទ្យាសាស្ត្រ</div>
@@ -11855,7 +11867,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <table>
             <tr>
               <td colspan="5" style="border:none; text-align:left; vertical-align:top;">
-                <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">ខេត្ត ព្រៃវែង</div>
+                <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">${cfg.province ? (cfg.province.startsWith('ខេត្ត') ? cfg.province : 'ខេត្ត ' + cfg.province) : 'ខេត្ត ព្រៃវែង'}</div>
                 <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">${ministry}</div>
                 <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">${schoolName}</div>
                 <div style="font-family:'Khmer OS Muol Light', serif; font-size:10pt; color:#002060;">ថ្នាក់ វិទ្យាសាស្ត្រ</div>
@@ -15953,6 +15965,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (target.schoolName) this.state.schoolConfig.schoolName = target.schoolName;
       if (target.ministry) this.state.schoolConfig.ministry = target.ministry;
       if (target.province) this.state.schoolConfig.province = target.province;
+      if (target.dateMode) this.state.schoolConfig.dateMode = target.dateMode;
+      if (target.lunarDate) this.state.schoolConfig.lunarDate = target.lunarDate;
+      if (target.solarDate) this.state.schoolConfig.solarDate = target.solarDate;
 
       this.activeRosterClass = 'current';
 
@@ -17416,30 +17431,119 @@ document.addEventListener('DOMContentLoaded', () => {
           const oldTrack = this.state.schoolConfig?.track;
           const newTrack = document.getElementById('set-track').value.trim();
 
+          const newSchoolName = document.getElementById('set-school-name').value.trim();
+          const newProvince = document.getElementById('set-province').value.trim();
+          const newMinistry = document.getElementById('set-ministry').value.trim();
+          const newClassName = document.getElementById('set-class-name').value.trim();
+          const newAcademicYear = document.getElementById('set-academic-year').value.trim();
+          const newTeacherName = document.getElementById('set-teacher-name').value.trim();
+          const newTeacherPhone = document.getElementById('set-teacher-phone').value.trim();
+          const newPrincipalName = document.getElementById('set-principal-name').value.trim();
+          const lunarVal = document.getElementById('set-lunar-date').value.trim();
+          const solarVal = document.getElementById('set-solar-date').value.trim();
+
           this.state.schoolConfig = {
             ...(this.state.schoolConfig || {}),
-            schoolName: document.getElementById('set-school-name').value.trim(),
-            province: document.getElementById('set-province').value.trim(),
-            ministry: document.getElementById('set-ministry').value.trim(),
-            className: document.getElementById('set-class-name').value.trim(),
+            schoolName: newSchoolName,
+            province: newProvince,
+            ministry: newMinistry,
+            className: newClassName,
             track: newTrack,
-            academicYear: document.getElementById('set-academic-year').value.trim(),
-            teacherName: document.getElementById('set-teacher-name').value.trim(),
-            teacherPhone: document.getElementById('set-teacher-phone').value.trim(),
-            principalName: document.getElementById('set-principal-name').value.trim(),
+            academicYear: newAcademicYear,
+            teacherName: newTeacherName,
+            teacherPhone: newTeacherPhone,
+            principalName: newPrincipalName,
             dateMode: dateMode,
-            lunarDate: document.getElementById('set-lunar-date').value.trim(),
-            solarDate: document.getElementById('set-solar-date').value.trim()
+            lunarDate: lunarVal,
+            solarDate: solarVal
           };
 
-          // Also sync with active class in classes array
+          // Sync with active class and all classes in classes array
           const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
-          if (curCls) {
-            curCls.name = this.state.schoolConfig.className;
-            curCls.track = newTrack;
-            curCls.academicYear = this.state.schoolConfig.academicYear;
-            curCls.teacherName = this.state.schoolConfig.teacherName;
-            curCls.teacherPhone = this.state.schoolConfig.teacherPhone;
+          if (Array.isArray(this.state.classes)) {
+            this.state.classes.forEach(c => {
+              c.schoolName = newSchoolName;
+              c.province = newProvince;
+              c.ministry = newMinistry;
+              c.academicYear = newAcademicYear;
+              c.principalName = newPrincipalName;
+              c.dateMode = dateMode;
+              c.lunarDate = lunarVal;
+              c.solarDate = solarVal;
+              if (c.id === this.state.currentClassId) {
+                c.name = newClassName;
+                c.track = newTrack;
+                c.teacherName = newTeacherName;
+                c.teacherPhone = newTeacherPhone;
+              }
+            });
+          }
+
+          // Propagate Date Mode and Dates to ALL tables in this.state.tableDates
+          const isManual = (dateMode === 'manual');
+          const isAuto = !isManual;
+
+          this.state.tableDates = this.state.tableDates || {};
+          const dateObj = {
+            lunarDate: lunarVal,
+            solarDate: solarVal,
+            lunar: lunarVal,
+            solar: solarVal,
+            isAuto,
+            isManual
+          };
+
+          const allKeys = new Set([
+            'roster',
+            'scores',
+            'ranking',
+            'attendance',
+            'attendance_all',
+            'attendance_sem_1',
+            'attendance_sem_2',
+            'sem_1',
+            'sem_2',
+            'sem_sem_1',
+            'sem_sem_2',
+            'sem_year',
+            'annual',
+            'exam_sem_1',
+            'exam_sem_2',
+            'sem_retest_repeat',
+            'report_cards',
+            'honor_roll'
+          ]);
+
+          Object.keys(this.state.tableDates).forEach(k => allKeys.add(k));
+
+          if (Array.isArray(this.state.months)) {
+            this.state.months.forEach(m => {
+              if (m.id) {
+                allKeys.add(m.id);
+                allKeys.add('month_' + m.id);
+                allKeys.add(m.id.replace(/^month_/, ''));
+                allKeys.add('attendance_' + m.id);
+                allKeys.add('attendance_' + m.id.replace(/^month_/, ''));
+              }
+            });
+          }
+          for (let i = 1; i <= 12; i++) {
+            const pad = String(i).padStart(2, '0');
+            allKeys.add('month_' + pad);
+            allKeys.add('month_' + i);
+            allKeys.add('month_month_' + pad);
+            allKeys.add('attendance_month_' + pad);
+            allKeys.add('attendance_month_' + i);
+          }
+
+          allKeys.forEach(k => {
+            this.state.tableDates[k] = { ...dateObj };
+          });
+
+          if (Array.isArray(this.state.classes)) {
+            this.state.classes.forEach(c => {
+              c.tableDates = JSON.parse(JSON.stringify(this.state.tableDates));
+            });
           }
 
           if (oldTrack && oldTrack !== newTrack) {
@@ -17453,7 +17557,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           this.saveState();
           this.renderCurrentView();
-          this.showToast('✅ ការកំណត់ត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
+          this.showToast('✅ ការកំណត់ និងកាលបរិច្ឆេទត្រូវបានរក្សាទុក និងធ្វើបច្ចុប្បន្នភាពគ្រប់តារាងទាំងអស់ដោយជោគជ័យ!', 'success');
         });
       }
 
@@ -20402,20 +20506,34 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       this.state.tableDates = this.state.tableDates || {};
-      const item = this.state.tableDates[tableKey];
+      let item = this.state.tableDates[tableKey];
+      if (!item && typeof tableKey === 'string') {
+        if (tableKey.startsWith('month_month_')) {
+          item = this.state.tableDates[tableKey.replace(/^month_month_/, 'month_')];
+        } else if (tableKey.startsWith('month_')) {
+          item = this.state.tableDates[tableKey.replace(/^month_/, '')];
+        } else {
+          item = this.state.tableDates['month_' + tableKey];
+        }
+      }
+
+      const isPlaceholderSolar = (s) => !s || s.includes('.......') || s.includes('២០២...') || s.trim() === 'ថ្ងៃទី ០៣ ខែ វិច្ឆិកា ឆ្នាំ ២០២៥';
+      const isPlaceholderLunar = (l) => !l || l.includes('.......') || l.includes('២៥៦...') || l.trim() === 'ថ្ងៃ ចន្ទ១៣កើត ខែកត្តិក ឆ្នាំម្សាញ់ សប្ដស័ក ព​.ស២៥៦៩';
 
       // 1. Explicit manual lock for this table
       if (item && item.isManual === true) {
-        const lunarDate = item.lunarDate || item.lunar || '';
-        const solarDate = item.solarDate || item.solar || '';
-        return {
-          lunarDate,
-          solarDate,
-          lunar: lunarDate,
-          solar: solarDate,
-          isManual: true,
-          isAuto: false
-        };
+        const lunarDate = (item.lunarDate || item.lunar || '').trim();
+        const solarDate = (item.solarDate || item.solar || '').trim();
+        if (!isPlaceholderSolar(solarDate) || !isPlaceholderLunar(lunarDate)) {
+          return {
+            lunarDate,
+            solarDate,
+            lunar: lunarDate,
+            solar: solarDate,
+            isManual: true,
+            isAuto: false
+          };
+        }
       }
 
       // 2. Explicit auto mode for this table
@@ -20429,9 +20547,6 @@ document.addEventListener('DOMContentLoaded', () => {
           isManual: false
         };
       }
-
-      const isPlaceholderSolar = (s) => !s || s.includes('.......') || s.includes('២០២...') || s.trim() === 'ថ្ងៃទី ០៣ ខែ វិច្ឆិកា ឆ្នាំ ២០២៥';
-      const isPlaceholderLunar = (l) => !l || l.includes('.......') || l.includes('២៥៦...') || l.trim() === 'ថ្ងៃ ចន្ទ១៣កើត ខែកត្តិក ឆ្នាំម្សាញ់ សប្ដស័ក ព​.ស២៥៦៩';
 
       // 3. If an item exists without explicit flag: check if it's NOT a placeholder text
       if (item) {
@@ -20492,6 +20607,14 @@ document.addEventListener('DOMContentLoaded', () => {
         isManual
       };
       this.state.tableDates[tableKey] = dateObj;
+      if (typeof tableKey === 'string') {
+        if (tableKey.startsWith('month_month_')) {
+          this.state.tableDates[tableKey.replace(/^month_month_/, 'month_')] = { ...dateObj };
+        } else if (tableKey.startsWith('month_')) {
+          this.state.tableDates['month_' + tableKey] = { ...dateObj };
+          this.state.tableDates[tableKey.replace(/^month_/, '')] = { ...dateObj };
+        }
+      }
 
       if (applyToAll) {
         if (!this.state.schoolConfig) this.state.schoolConfig = {};
@@ -20499,29 +20622,63 @@ document.addEventListener('DOMContentLoaded', () => {
         this.state.schoolConfig.lunarDate = dateObj.lunarDate;
         this.state.schoolConfig.solarDate = dateObj.solarDate;
 
-        const allKeys = [
+        const allKeys = new Set([
           'roster',
+          'scores',
+          'ranking',
           'attendance',
           'attendance_all',
           'attendance_sem_1',
           'attendance_sem_2',
           'sem_1',
           'sem_2',
+          'sem_sem_1',
+          'sem_sem_2',
+          'sem_year',
           'annual',
           'exam_sem_1',
           'exam_sem_2',
+          'sem_retest_repeat',
           'report_cards',
           'honor_roll'
-        ];
+        ]);
+        Object.keys(this.state.tableDates).forEach(k => allKeys.add(k));
         if (Array.isArray(this.state.months)) {
           this.state.months.forEach(m => {
-            allKeys.push('month_' + m.id);
-            allKeys.push('attendance_' + m.id);
+            if (m.id) {
+              allKeys.add(m.id);
+              allKeys.add('month_' + m.id);
+              allKeys.add(m.id.replace(/^month_/, ''));
+              allKeys.add('attendance_' + m.id);
+              allKeys.add('attendance_' + m.id.replace(/^month_/, ''));
+            }
           });
+        }
+        for (let i = 1; i <= 12; i++) {
+          const pad = String(i).padStart(2, '0');
+          allKeys.add('month_' + pad);
+          allKeys.add('month_' + i);
+          allKeys.add('month_month_' + pad);
+          allKeys.add('attendance_month_' + pad);
+          allKeys.add('attendance_month_' + i);
         }
         allKeys.forEach(k => {
           this.state.tableDates[k] = { ...dateObj };
         });
+
+        if (Array.isArray(this.state.classes)) {
+          this.state.classes.forEach(c => {
+            c.dateMode = isAuto ? 'auto' : 'manual';
+            c.lunarDate = dateObj.lunarDate;
+            c.solarDate = dateObj.solarDate;
+            c.tableDates = JSON.parse(JSON.stringify(this.state.tableDates));
+          });
+        }
+      } else {
+        const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
+        if (curCls) {
+          curCls.tableDates = JSON.parse(JSON.stringify(this.state.tableDates));
+        }
       }
 
       this.saveState();
