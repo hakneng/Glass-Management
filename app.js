@@ -4470,8 +4470,18 @@ document.addEventListener('DOMContentLoaded', () => {
           const studentId = parseInt(e.target.getAttribute('data-student-id'), 10);
           const subjectId = e.target.getAttribute('data-subject-id');
           const maxScore = parseFloat(e.target.getAttribute('data-max'));
-          let val = parseFloat(e.target.value);
+          const rawVal = String(e.target.value || '').trim();
+          if (rawVal === '') {
+            if (this.state.scoresByPeriod[this.currentMonthId]?.[studentId]) {
+              delete this.state.scoresByPeriod[this.currentMonthId][studentId][subjectId];
+              delete this.state.scoresByPeriod[this.currentMonthId][studentId].lockedRank;
+            }
+            this.saveState();
+            this.updateMonthlyRowInPlace(studentId);
+            return;
+          }
 
+          let val = parseFloat(rawVal);
           if (isNaN(val) || val < 0) {
             val = 0;
             e.target.value = 0;
@@ -4489,6 +4499,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           this.state.scoresByPeriod[this.currentMonthId][studentId][subjectId] = val;
+          delete this.state.scoresByPeriod[this.currentMonthId][studentId].lockedRank;
 
           // If editing khmer_essay or khmer_dictation, also maintain combined khmer score
           const stObj = this.state.scoresByPeriod[this.currentMonthId][studentId];
@@ -4588,6 +4599,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!this.state.scoresByPeriod[this.currentMonthId]) this.state.scoresByPeriod[this.currentMonthId] = {};
                 if (!this.state.scoresByPeriod[this.currentMonthId][stId]) this.state.scoresByPeriod[this.currentMonthId][stId] = {};
                 this.state.scoresByPeriod[this.currentMonthId][stId][subjectId] = val;
+                delete this.state.scoresByPeriod[this.currentMonthId][stId].lockedRank;
 
                 this.updateMonthlyRowInPlace(stId);
                 appliedCount++;
@@ -5270,17 +5282,18 @@ document.addEventListener('DOMContentLoaded', () => {
                   : 'ថ្នាក់ទី១២៖ ភាសាអង់គ្លេសមិនគិតមេគុណ | ពិន្ទុ > 25 ទើបបូកសំណល់') 
               : `មេគុណ: ${s.coef || 1}`;
             return `
-              <th class="text-center" title="${title}" style="min-width: ${isFiltered ? '130px' : '75px'}; ${isFiltered ? 'background: #eff6ff; color: #1e40af;' : ''} ${isEngBonus ? 'background: #f0fdf4;' : ''}">
-                ${s.name}<br><small style="color: ${isEngBonus ? '#15803d' : (isFiltered ? '#2563eb' : '#64748b')}; font-weight: bold;">${hint}</small>
+              <th class="text-center score-sub-header" title="${title}" style="min-width: ${isFiltered ? '110px' : '52px'}; max-width: ${isFiltered ? '130px' : '65px'}; padding: 4px 2px; ${isFiltered ? 'background: #eff6ff; color: #1e40af;' : ''} ${isEngBonus ? 'background: #f0fdf4;' : ''}">
+                <div style="font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${s.name}">${s.name}</div>
+                <small style="color: ${isEngBonus ? '#15803d' : (isFiltered ? '#2563eb' : '#64748b')}; font-weight: bold; font-size: 10px; display: block; line-height: 1.1;">${hint}</small>
               </th>
             `;
           }).join('')}
-          <th class="text-center" style="min-width: 80px; background: #e2e8f0;">សរុប</th>
-          <th class="text-center" style="min-width: 85px; background: #e0f2fe;" title="មធ្យមភាគ = ពិន្ទុសរុប ចែកនឹងផលបូកមេគុណ ${periodDivisor ? `(${periodDivisor})` : ''}">
-            មធ្យមភាគ${periodDivisor ? `<br><small style="color: #0369a1; font-weight: 700; font-size: 11px;">(÷ ${periodDivisor})</small>` : ''}
+          <th class="text-center" style="min-width: 56px; width: 56px; background: #e2e8f0; font-size: 12.5px; padding: 4px 2px;">សរុប</th>
+          <th class="text-center" style="min-width: 62px; width: 64px; background: #e0f2fe; font-size: 12.5px; padding: 4px 2px;" title="មធ្យមភាគ = ពិន្ទុសរុប ចែកនឹងផលបូកមេគុណ ${periodDivisor ? `(${periodDivisor})` : ''}">
+            មធ្យមភាគ${periodDivisor ? `<br><small style="color: #0369a1; font-weight: 700; font-size: 10px;">(÷ ${periodDivisor})</small>` : ''}
           </th>
-          <th class="text-center" style="width: 60px;">ចំណាត់ថ្នាក់</th>
-          <th class="text-center" style="min-width: 80px;">និទ្ទេស</th>
+          <th class="text-center" style="width: 44px; min-width: 44px; font-size: 12.5px; padding: 4px 2px;">ចំណាត់ថ្នាក់</th>
+          <th class="text-center" style="min-width: 68px; width: 70px; font-size: 12px; padding: 4px 2px;">និទ្ទេស</th>
         </tr>
       `;
 
@@ -5295,13 +5308,13 @@ document.addEventListener('DOMContentLoaded', () => {
           ${subjects.map(s => {
             const val = row.scores[s.id] !== undefined ? row.scores[s.id] : '';
             return `
-              <td class="text-center">
+              <td class="text-center" style="padding: 4px 2px;">
                 <input type="number" 
                        class="score-input ${val !== '' ? 'has-score' : ''}" 
                        data-student-id="${row.id}" 
                        data-subject-id="${s.id}" 
                        data-max="${s.max}"
-                       style="${isFiltered ? 'width: 100px; font-size: 15px; padding: 6px; font-weight: 700;' : ''}"
+                       style="${isFiltered ? 'width: 90px; font-size: 15px; padding: 5px; font-weight: 700;' : ''}"
                        min="0" 
                        max="${s.max}" 
                        step="0.5" 
@@ -5309,10 +5322,10 @@ document.addEventListener('DOMContentLoaded', () => {
               </td>
             `;
           }).join('')}
-          <td class="text-center font-bold cell-total" style="background: #f8fafc;">${row.total}</td>
-          <td class="text-center font-bold cell-avg" data-divisor="${studentDivisor}" title="ពិន្ទុ ${row.total} ÷ មេគុណ ${studentDivisor} = ${Calculations.formatAvg(row.avg, this.state.gradingRules)}" style="color: #1d4ed8; background: #f0f9ff;">${Calculations.formatAvg(row.avg, this.state.gradingRules)}</td>
-          <td class="text-center font-bold cell-rank" style="color: #dc2626;">${row.rank}</td>
-          <td class="text-center cell-badge"><span class="badge ${row.colorClass}">${row.grade} ${row.mention}</span></td>
+          <td class="text-center font-bold cell-total" style="background: #f8fafc; font-size: 13px; padding: 4px 2px;">${row.total}</td>
+          <td class="text-center font-bold cell-avg" data-divisor="${studentDivisor}" title="ពិន្ទុ ${row.total} ÷ មេគុណ ${studentDivisor} = ${Calculations.formatAvg(row.avg, this.state.gradingRules)}" style="color: #1d4ed8; background: #f0f9ff; font-size: 13px; padding: 4px 2px;">${Calculations.formatAvg(row.avg, this.state.gradingRules)}</td>
+          <td class="text-center font-bold cell-rank" style="color: #dc2626; font-size: 13px; padding: 4px 2px;">${row.rank}</td>
+          <td class="text-center cell-badge" style="padding: 4px 2px;"><span class="badge ${row.colorClass}" style="font-size: 11px; padding: 2px 4px;">${row.grade} ${row.mention}</span></td>
         </tr>
       `;
       }).join('');
@@ -5324,27 +5337,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const scoreInputs = row.querySelectorAll('.score-input');
       const inputScores = {};
-      let hasAnyEnteredInput = false;
       scoreInputs.forEach(inp => {
         const sub = inp.getAttribute('data-subject-id');
-        const valStr = inp.value !== undefined && inp.value !== null ? String(inp.value).trim() : '';
-        if (valStr !== '') {
-          const val = parseFloat(valStr);
-          if (!isNaN(val)) {
-            inputScores[sub] = val;
-            hasAnyEnteredInput = true;
-          }
-        }
+        const val = parseFloat(inp.value);
+        if (!isNaN(val)) inputScores[sub] = val;
       });
 
       // Merge with student's period scores in state
       const periodScores = this.state.scoresByPeriod[this.currentMonthId]?.[studentId] || {};
-      const cleanPeriodScores = { ...periodScores };
-      if (hasAnyEnteredInput) {
-        delete cleanPeriodScores.total;
-        delete cleanPeriodScores.avg;
-      }
-      const mergedScores = { ...cleanPeriodScores, ...inputScores };
+      const mergedScores = { ...periodScores, ...inputScores };
+      delete mergedScores.total;
+      delete mergedScores.avg;
+      delete mergedScores.lockedRank;
       if (mergedScores.khmer_essay !== undefined || mergedScores.khmer_dictation !== undefined) {
         const essayVal = parseFloat(mergedScores.khmer_essay) || 0;
         const dictVal = parseFloat(mergedScores.khmer_dictation) || 0;
@@ -10952,7 +10956,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="g12-header">
               <div class="g12-header-top">
                 <div class="g12-header-left">
-                  <div class="g12-line">${cfg.province ? (cfg.province.startsWith('ខេត្ត') ? cfg.province : 'ខេត្ត ' + cfg.province) : 'ខេត្ត ព្រៃវែង'}</div>
+                  <div class="g12-line">ខេត្ត ព្រៃវែង</div>
                   <div class="g12-line">${cfg.ministry || 'មន្ទីរ អប់រំ យុវជន និងកីឡា ខេត្ត ព្រៃវែង'}</div>
                   <div class="g12-line">${cfg.schoolName || 'វិទ្យាល័យ មិត្តភាពខ្មែរ-ជប៉ុន'}</div>
                   <div class="g12-line">ថ្នាក់ វិទ្យាសាស្ត្រ</div>
@@ -11867,7 +11871,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <table>
             <tr>
               <td colspan="5" style="border:none; text-align:left; vertical-align:top;">
-                <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">${cfg.province ? (cfg.province.startsWith('ខេត្ត') ? cfg.province : 'ខេត្ត ' + cfg.province) : 'ខេត្ត ព្រៃវែង'}</div>
+                <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">ខេត្ត ព្រៃវែង</div>
                 <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">${ministry}</div>
                 <div style="font-family:'Khmer OS Muol Light', serif; font-size:11pt; color:#002060;">${schoolName}</div>
                 <div style="font-family:'Khmer OS Muol Light', serif; font-size:10pt; color:#002060;">ថ្នាក់ វិទ្យាសាស្ត្រ</div>
@@ -12349,7 +12353,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const map = new Map();
         let r = 1;
         arr.forEach((it, idx) => {
-          if (idx > 0 && (Number(it.val) || 0) < (Number(arr[idx - 1].val) || 0)) {
+          const numVal = Number(it.val) || 0;
+          if (numVal <= 0 || it.val === '-' || it.val === null || it.val === undefined) {
+            map.set(it.id, '-');
+            return;
+          }
+          if (idx > 0 && numVal < (Number(arr[idx - 1].val) || 0)) {
             r = idx + 1;
           }
           map.set(it.id, r);
@@ -15965,9 +15974,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (target.schoolName) this.state.schoolConfig.schoolName = target.schoolName;
       if (target.ministry) this.state.schoolConfig.ministry = target.ministry;
       if (target.province) this.state.schoolConfig.province = target.province;
-      if (target.dateMode) this.state.schoolConfig.dateMode = target.dateMode;
-      if (target.lunarDate) this.state.schoolConfig.lunarDate = target.lunarDate;
-      if (target.solarDate) this.state.schoolConfig.solarDate = target.solarDate;
 
       this.activeRosterClass = 'current';
 
@@ -17431,119 +17437,30 @@ document.addEventListener('DOMContentLoaded', () => {
           const oldTrack = this.state.schoolConfig?.track;
           const newTrack = document.getElementById('set-track').value.trim();
 
-          const newSchoolName = document.getElementById('set-school-name').value.trim();
-          const newProvince = document.getElementById('set-province').value.trim();
-          const newMinistry = document.getElementById('set-ministry').value.trim();
-          const newClassName = document.getElementById('set-class-name').value.trim();
-          const newAcademicYear = document.getElementById('set-academic-year').value.trim();
-          const newTeacherName = document.getElementById('set-teacher-name').value.trim();
-          const newTeacherPhone = document.getElementById('set-teacher-phone').value.trim();
-          const newPrincipalName = document.getElementById('set-principal-name').value.trim();
-          const lunarVal = document.getElementById('set-lunar-date').value.trim();
-          const solarVal = document.getElementById('set-solar-date').value.trim();
-
           this.state.schoolConfig = {
             ...(this.state.schoolConfig || {}),
-            schoolName: newSchoolName,
-            province: newProvince,
-            ministry: newMinistry,
-            className: newClassName,
+            schoolName: document.getElementById('set-school-name').value.trim(),
+            province: document.getElementById('set-province').value.trim(),
+            ministry: document.getElementById('set-ministry').value.trim(),
+            className: document.getElementById('set-class-name').value.trim(),
             track: newTrack,
-            academicYear: newAcademicYear,
-            teacherName: newTeacherName,
-            teacherPhone: newTeacherPhone,
-            principalName: newPrincipalName,
+            academicYear: document.getElementById('set-academic-year').value.trim(),
+            teacherName: document.getElementById('set-teacher-name').value.trim(),
+            teacherPhone: document.getElementById('set-teacher-phone').value.trim(),
+            principalName: document.getElementById('set-principal-name').value.trim(),
             dateMode: dateMode,
-            lunarDate: lunarVal,
-            solarDate: solarVal
+            lunarDate: document.getElementById('set-lunar-date').value.trim(),
+            solarDate: document.getElementById('set-solar-date').value.trim()
           };
 
-          // Sync with active class and all classes in classes array
+          // Also sync with active class in classes array
           const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
-          if (Array.isArray(this.state.classes)) {
-            this.state.classes.forEach(c => {
-              c.schoolName = newSchoolName;
-              c.province = newProvince;
-              c.ministry = newMinistry;
-              c.academicYear = newAcademicYear;
-              c.principalName = newPrincipalName;
-              c.dateMode = dateMode;
-              c.lunarDate = lunarVal;
-              c.solarDate = solarVal;
-              if (c.id === this.state.currentClassId) {
-                c.name = newClassName;
-                c.track = newTrack;
-                c.teacherName = newTeacherName;
-                c.teacherPhone = newTeacherPhone;
-              }
-            });
-          }
-
-          // Propagate Date Mode and Dates to ALL tables in this.state.tableDates
-          const isManual = (dateMode === 'manual');
-          const isAuto = !isManual;
-
-          this.state.tableDates = this.state.tableDates || {};
-          const dateObj = {
-            lunarDate: lunarVal,
-            solarDate: solarVal,
-            lunar: lunarVal,
-            solar: solarVal,
-            isAuto,
-            isManual
-          };
-
-          const allKeys = new Set([
-            'roster',
-            'scores',
-            'ranking',
-            'attendance',
-            'attendance_all',
-            'attendance_sem_1',
-            'attendance_sem_2',
-            'sem_1',
-            'sem_2',
-            'sem_sem_1',
-            'sem_sem_2',
-            'sem_year',
-            'annual',
-            'exam_sem_1',
-            'exam_sem_2',
-            'sem_retest_repeat',
-            'report_cards',
-            'honor_roll'
-          ]);
-
-          Object.keys(this.state.tableDates).forEach(k => allKeys.add(k));
-
-          if (Array.isArray(this.state.months)) {
-            this.state.months.forEach(m => {
-              if (m.id) {
-                allKeys.add(m.id);
-                allKeys.add('month_' + m.id);
-                allKeys.add(m.id.replace(/^month_/, ''));
-                allKeys.add('attendance_' + m.id);
-                allKeys.add('attendance_' + m.id.replace(/^month_/, ''));
-              }
-            });
-          }
-          for (let i = 1; i <= 12; i++) {
-            const pad = String(i).padStart(2, '0');
-            allKeys.add('month_' + pad);
-            allKeys.add('month_' + i);
-            allKeys.add('month_month_' + pad);
-            allKeys.add('attendance_month_' + pad);
-            allKeys.add('attendance_month_' + i);
-          }
-
-          allKeys.forEach(k => {
-            this.state.tableDates[k] = { ...dateObj };
-          });
-
-          if (Array.isArray(this.state.classes)) {
-            this.state.classes.forEach(c => {
-              c.tableDates = JSON.parse(JSON.stringify(this.state.tableDates));
-            });
+          if (curCls) {
+            curCls.name = this.state.schoolConfig.className;
+            curCls.track = newTrack;
+            curCls.academicYear = this.state.schoolConfig.academicYear;
+            curCls.teacherName = this.state.schoolConfig.teacherName;
+            curCls.teacherPhone = this.state.schoolConfig.teacherPhone;
           }
 
           if (oldTrack && oldTrack !== newTrack) {
@@ -17557,7 +17474,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           this.saveState();
           this.renderCurrentView();
-          this.showToast('✅ ការកំណត់ និងកាលបរិច្ឆេទត្រូវបានរក្សាទុក និងធ្វើបច្ចុប្បន្នភាពគ្រប់តារាងទាំងអស់ដោយជោគជ័យ!', 'success');
+          this.showToast('✅ ការកំណត់ត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
         });
       }
 
@@ -18669,8 +18586,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const stId = parseInt(e.target.getAttribute('data-student-id'), 10);
             const subId = e.target.getAttribute('data-subject-id');
             const max = parseFloat(e.target.getAttribute('data-max')) || 100;
-            let val = parseFloat(e.target.value);
+            const rawStr = String(e.target.value || '').trim();
+            if (rawStr === '') {
+              if (this.state.scoresByPeriod[this.quickScoreMonthId]?.[stId]) {
+                delete this.state.scoresByPeriod[this.quickScoreMonthId][stId][subId];
+                delete this.state.scoresByPeriod[this.quickScoreMonthId][stId].lockedRank;
+              }
+              this.saveState();
+              this.updateQuickScoreAllRowInPlace(stId);
+              return;
+            }
 
+            let val = parseFloat(rawStr);
             if (isNaN(val) || val < 0) {
               val = 0;
               e.target.value = 0;
@@ -18810,8 +18737,18 @@ document.addEventListener('DOMContentLoaded', () => {
           if (e.target.classList.contains('qs-card-score-input')) {
             const subId = e.target.getAttribute('data-subject-id');
             const max = parseFloat(e.target.getAttribute('data-max')) || 100;
-            let val = parseFloat(e.target.value);
+            const rawStr = String(e.target.value || '').trim();
+            if (rawStr === '') {
+              if (this.state.scoresByPeriod[this.quickScoreMonthId]?.[stId]) {
+                delete this.state.scoresByPeriod[this.quickScoreMonthId][stId][subId];
+                delete this.state.scoresByPeriod[this.quickScoreMonthId][stId].lockedRank;
+              }
+              this.saveState();
+              this.updateQuickScoreAllRowInPlace(stId);
+              return;
+            }
 
+            let val = parseFloat(rawStr);
             if (isNaN(val) || val < 0) {
               val = 0;
               e.target.value = 0;
@@ -19807,36 +19744,8 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     setupGraceMarksEvents() {
-      // Dynamic button creation fallback in case index.html is an older version
-      let btnOpen = document.getElementById('btn-open-grace-marks');
-      let btnRankingOpen = document.getElementById('btn-ranking-open-grace-marks');
-
-      if (!btnOpen) {
-        const qsBtn = document.getElementById('btn-open-quick-score');
-        if (qsBtn && qsBtn.parentElement) {
-          btnOpen = document.createElement('button');
-          btnOpen.className = 'btn btn-purple';
-          btnOpen.id = 'btn-open-grace-marks';
-          btnOpen.style.cssText = 'background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(124,58,237,0.25);';
-          btnOpen.title = 'សារ៉េពិន្ទុអនុគ្រោះដើម្បីជួយស្រោចស្រង់សិស្សដែលធ្លាក់មធ្យមភាគ';
-          btnOpen.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> <span>🪄 សារ៉េពិន្ទុអនុគ្រោះ</span>';
-          qsBtn.parentElement.insertBefore(btnOpen, qsBtn);
-        }
-      }
-
-      if (!btnRankingOpen) {
-        const printBtn = document.getElementById('btn-print-monthly-ranking');
-        if (printBtn && printBtn.parentElement) {
-          btnRankingOpen = document.createElement('button');
-          btnRankingOpen.className = 'btn btn-purple';
-          btnRankingOpen.id = 'btn-ranking-open-grace-marks';
-          btnRankingOpen.style.cssText = 'background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; box-shadow: 0 1px 2px rgba(124,58,237,0.25);';
-          btnRankingOpen.title = 'សារ៉េពិន្ទុអនុគ្រោះដើម្បីជួយស្រោចស្រង់សិស្សដែលធ្លាក់មធ្យមភាគ';
-          btnRankingOpen.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> <span>🪄 សារ៉េពិន្ទុអនុគ្រោះ</span>';
-          printBtn.parentElement.insertBefore(btnRankingOpen, printBtn);
-        }
-      }
-
+      const btnOpen = document.getElementById('btn-open-grace-marks');
+      const btnRankingOpen = document.getElementById('btn-ranking-open-grace-marks');
       [btnOpen, btnRankingOpen].forEach(btn => {
         if (btn) {
           btn.addEventListener('click', () => {
@@ -20397,15 +20306,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       }
 
-      // 3. Lock original rank on EVERY student in this period & lock tested subjects to prevent any divisor jump
+      // 3. Lock original rank on EVERY student in this period
       if (!this.state.scoresByPeriod[periodId]) {
         this.state.scoresByPeriod[periodId] = {};
-      }
-
-      // Pre-lock tested subject IDs before applying grace marks
-      const preTestedSubs = Calculations.getTestedSubjects(this.state.subjects || [], this.state.scoresByPeriod[periodId] || {}, null, this.state.students);
-      if (Array.isArray(preTestedSubs) && preTestedSubs.length > 0) {
-        this.state.scoresByPeriod[periodId]._testedSubjectIds = preTestedSubs.map(s => s.id);
       }
 
       preData.forEach(st => {
@@ -20506,34 +20409,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       this.state.tableDates = this.state.tableDates || {};
-      let item = this.state.tableDates[tableKey];
-      if (!item && typeof tableKey === 'string') {
-        if (tableKey.startsWith('month_month_')) {
-          item = this.state.tableDates[tableKey.replace(/^month_month_/, 'month_')];
-        } else if (tableKey.startsWith('month_')) {
-          item = this.state.tableDates[tableKey.replace(/^month_/, '')];
-        } else {
-          item = this.state.tableDates['month_' + tableKey];
-        }
-      }
-
-      const isPlaceholderSolar = (s) => !s || s.includes('.......') || s.includes('២០២...') || s.trim() === 'ថ្ងៃទី ០៣ ខែ វិច្ឆិកា ឆ្នាំ ២០២៥';
-      const isPlaceholderLunar = (l) => !l || l.includes('.......') || l.includes('២៥៦...') || l.trim() === 'ថ្ងៃ ចន្ទ១៣កើត ខែកត្តិក ឆ្នាំម្សាញ់ សប្ដស័ក ព​.ស២៥៦៩';
+      const item = this.state.tableDates[tableKey];
 
       // 1. Explicit manual lock for this table
       if (item && item.isManual === true) {
-        const lunarDate = (item.lunarDate || item.lunar || '').trim();
-        const solarDate = (item.solarDate || item.solar || '').trim();
-        if (!isPlaceholderSolar(solarDate) || !isPlaceholderLunar(lunarDate)) {
-          return {
-            lunarDate,
-            solarDate,
-            lunar: lunarDate,
-            solar: solarDate,
-            isManual: true,
-            isAuto: false
-          };
-        }
+        const lunarDate = item.lunarDate || item.lunar || '';
+        const solarDate = item.solarDate || item.solar || '';
+        return {
+          lunarDate,
+          solarDate,
+          lunar: lunarDate,
+          solar: solarDate,
+          isManual: true,
+          isAuto: false
+        };
       }
 
       // 2. Explicit auto mode for this table
@@ -20547,6 +20436,9 @@ document.addEventListener('DOMContentLoaded', () => {
           isManual: false
         };
       }
+
+      const isPlaceholderSolar = (s) => !s || s.includes('.......') || s.includes('២០២...') || s.trim() === 'ថ្ងៃទី ០៣ ខែ វិច្ឆិកា ឆ្នាំ ២០២៥';
+      const isPlaceholderLunar = (l) => !l || l.includes('.......') || l.includes('២៥៦...') || l.trim() === 'ថ្ងៃ ចន្ទ១៣កើត ខែកត្តិក ឆ្នាំម្សាញ់ សប្ដស័ក ព​.ស២៥៦៩';
 
       // 3. If an item exists without explicit flag: check if it's NOT a placeholder text
       if (item) {
@@ -20607,14 +20499,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isManual
       };
       this.state.tableDates[tableKey] = dateObj;
-      if (typeof tableKey === 'string') {
-        if (tableKey.startsWith('month_month_')) {
-          this.state.tableDates[tableKey.replace(/^month_month_/, 'month_')] = { ...dateObj };
-        } else if (tableKey.startsWith('month_')) {
-          this.state.tableDates['month_' + tableKey] = { ...dateObj };
-          this.state.tableDates[tableKey.replace(/^month_/, '')] = { ...dateObj };
-        }
-      }
 
       if (applyToAll) {
         if (!this.state.schoolConfig) this.state.schoolConfig = {};
@@ -20622,63 +20506,29 @@ document.addEventListener('DOMContentLoaded', () => {
         this.state.schoolConfig.lunarDate = dateObj.lunarDate;
         this.state.schoolConfig.solarDate = dateObj.solarDate;
 
-        const allKeys = new Set([
+        const allKeys = [
           'roster',
-          'scores',
-          'ranking',
           'attendance',
           'attendance_all',
           'attendance_sem_1',
           'attendance_sem_2',
           'sem_1',
           'sem_2',
-          'sem_sem_1',
-          'sem_sem_2',
-          'sem_year',
           'annual',
           'exam_sem_1',
           'exam_sem_2',
-          'sem_retest_repeat',
           'report_cards',
           'honor_roll'
-        ]);
-        Object.keys(this.state.tableDates).forEach(k => allKeys.add(k));
+        ];
         if (Array.isArray(this.state.months)) {
           this.state.months.forEach(m => {
-            if (m.id) {
-              allKeys.add(m.id);
-              allKeys.add('month_' + m.id);
-              allKeys.add(m.id.replace(/^month_/, ''));
-              allKeys.add('attendance_' + m.id);
-              allKeys.add('attendance_' + m.id.replace(/^month_/, ''));
-            }
+            allKeys.push('month_' + m.id);
+            allKeys.push('attendance_' + m.id);
           });
-        }
-        for (let i = 1; i <= 12; i++) {
-          const pad = String(i).padStart(2, '0');
-          allKeys.add('month_' + pad);
-          allKeys.add('month_' + i);
-          allKeys.add('month_month_' + pad);
-          allKeys.add('attendance_month_' + pad);
-          allKeys.add('attendance_month_' + i);
         }
         allKeys.forEach(k => {
           this.state.tableDates[k] = { ...dateObj };
         });
-
-        if (Array.isArray(this.state.classes)) {
-          this.state.classes.forEach(c => {
-            c.dateMode = isAuto ? 'auto' : 'manual';
-            c.lunarDate = dateObj.lunarDate;
-            c.solarDate = dateObj.solarDate;
-            c.tableDates = JSON.parse(JSON.stringify(this.state.tableDates));
-          });
-        }
-      } else {
-        const curCls = this.state.classes?.find(c => c.id === this.state.currentClassId);
-        if (curCls) {
-          curCls.tableDates = JSON.parse(JSON.stringify(this.state.tableDates));
-        }
       }
 
       this.saveState();

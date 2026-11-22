@@ -32,11 +32,11 @@ const Calculations = {
   parseKhmerSolarDateToISO(str) {
     if (!str || typeof str !== 'string') return '';
     const khmerMonths = {
-      'មករា': 1, 'កុម្ភៈ': 2, 'មីនា': 3, 'មេសា': 4, 'ឧសភា': 5, 'មិថុនា': 6,
+      'មករា': 1, 'កុម្ភៈ': 2, 'កុម្ភះ': 2, 'មីនា': 3, 'មិនា': 3, 'មេសា': 4, 'ឧសភា': 5, 'មិថុនា': 6,
       'កក្កដា': 7, 'សីហា': 8, 'កញ្ញា': 9, 'តុលា': 10, 'វិច្ឆិកា': 11, 'ធ្នូ': 12
     };
     const norm = this.normalizeKhmerDigits(str);
-    const mMatch = norm.match(/ថ្ងៃ\s*ទី\s*(\d{1,2})\s*ខែ\s*([^\s,0-9]+)\s*ឆ្នាំ\s*(\d{4})/);
+    const mMatch = norm.match(/ថ្ងៃ\s*ទី\s*(\d{1,2})\s*ខែ\s*([^\s,]+)\s*ឆ្នាំ\s*(\d{4})/);
     if (mMatch) {
       const day = parseInt(mMatch[1], 10);
       const monthName = mMatch[2].trim();
@@ -265,15 +265,12 @@ const Calculations = {
   _parseGradeString(raw) {
     if (!raw) return 12;
     const norm = this.normalizeKhmerDigits(raw).toLowerCase().trim();
-    // Prioritize explicit grade labels with prefix (e.g. ថ្នាក់ទី9, grade 9) to avoid matching year like 2012
-    const m = norm.match(/(?:ថ្នាក់ទី|ថ្នាក់|ទី|grade|^|\s)(12|11|10|9|8|7)(?:\b|[^\d]|$)/);
-    if (m) return parseInt(m[1], 10);
-    if (/(?:^|[^\d])12(?:[^\d]|$)/.test(norm)) return 12;
-    if (/(?:^|[^\d])11(?:[^\d]|$)/.test(norm)) return 11;
-    if (/(?:^|[^\d])10(?:[^\d]|$)/.test(norm)) return 10;
-    if (/(?:^|[^\d])9(?:[^\d]|$)/.test(norm)) return 9;
-    if (/(?:^|[^\d])8(?:[^\d]|$)/.test(norm)) return 8;
-    if (/(?:^|[^\d])7(?:[^\d]|$)/.test(norm)) return 7;
+    if (norm === '12' || norm.includes('12')) return 12;
+    if (norm === '11' || norm.includes('11')) return 11;
+    if (norm === '10' || norm.includes('10')) return 10;
+    if (norm === '9' || /(?:^|[^\d])9(?:[^\d]|$)/.test(norm) || norm.includes('ថ្នាក់ទី9') || norm.includes('ទី9') || norm.includes('ថ្នាក់9')) return 9;
+    if (norm === '8' || /(?:^|[^\d])8(?:[^\d]|$)/.test(norm) || norm.includes('ថ្នាក់ទី8') || norm.includes('ទី8') || norm.includes('ថ្នាក់8')) return 8;
+    if (norm === '7' || /(?:^|[^\d])7(?:[^\d]|$)/.test(norm) || norm.includes('ថ្នាក់ទី7') || norm.includes('ទី7') || norm.includes('ថ្នាក់7')) return 7;
     return 12;
   },
 
@@ -336,27 +333,21 @@ const Calculations = {
     if (!Array.isArray(subjects) || subjects.length === 0) return [];
     const activeSubs = subjects.filter(s => s.includeInTotal !== false);
 
-    // 0. If explicit locked tested subjects are stored on periodScores, use them directly
-    if (periodScores && Array.isArray(periodScores._testedSubjectIds) && periodScores._testedSubjectIds.length > 0) {
-      const lockedSet = new Set(periodScores._testedSubjectIds);
-      return activeSubs.filter(s => lockedSet.has(s.id));
-    }
-
     const testedIds = new Set();
 
     // 1. Check class-wide periodScores for this period
     if (periodScores && typeof periodScores === 'object') {
       const validStudentIds = Array.isArray(students) && students.length > 0
         ? students.map(s => String(s.id))
-        : Object.keys(periodScores).filter(k => !k.startsWith('_'));
+        : Object.keys(periodScores);
 
       for (const sub of activeSubs) {
         let count = 0;
         for (const sid of validStudentIds) {
           const stObj = periodScores[sid];
-          if (stObj && typeof stObj === 'object') {
+          if (stObj) {
             const raw = stObj[sub.id];
-            if (raw !== undefined && raw !== null && raw !== '') {
+            if (raw !== undefined && raw !== null && raw !== '' && raw !== '-') {
               const val = parseFloat(raw);
               if (!isNaN(val)) {
                 count++;
@@ -371,11 +362,11 @@ const Calculations = {
       }
     }
 
-    // 2. Fallback to studentScore only if periodScores had no scores or was not provided
-    if (testedIds.size === 0 && studentScore && typeof studentScore === 'object') {
+    // 2. Also check studentScore (if provided e.g. for row-level edits or fallback)
+    if (studentScore && typeof studentScore === 'object') {
       for (const sub of activeSubs) {
         const raw = studentScore[sub.id];
-        if (raw !== undefined && raw !== null && raw !== '') {
+        if (raw !== undefined && raw !== null && raw !== '' && raw !== '-') {
           const val = parseFloat(raw);
           if (!isNaN(val)) {
             testedIds.add(sub.id);
@@ -415,13 +406,24 @@ const Calculations = {
     if (typeof isG12 !== 'boolean') {
       isG12 = this.isGrade12(typeof window !== 'undefined' ? window.App?.state : null);
     }
-    // Auto-resolve isGrade9Exam if not explicitly passed as a boolean
+    // Auto-resolve isGrade9Exam if not explicitly passed
     if (typeof isGrade9Exam !== 'boolean') {
       const st = typeof window !== 'undefined' ? window.App?.state : null;
       isGrade9Exam = this.isGrade9(st) && (subjects.some(s => s.id === 'khmer_essay' || s.id === 'khmer_dictation'));
     }
-    if (typeof isGrade12Exam !== 'boolean') {
-      isGrade12Exam = false;
+    if (!isGrade9Exam && typeof window !== 'undefined' && window.App) {
+      const curPeriod = window.App.currentMonthId || window.App.quickScoreMonthId || window.App.rankingMonthId;
+      const st = window.App.state;
+      if (curPeriod && this.isGrade9Exam(curPeriod, st)) {
+        isGrade9Exam = true;
+      }
+    }
+    // Auto-resolve isGrade12Exam if not explicitly passed
+    if (!isGrade12Exam && isG12 && typeof window !== 'undefined' && window.App) {
+      const curPeriod = window.App.currentMonthId || window.App.quickScoreMonthId || window.App.rankingMonthId;
+      if (curPeriod && this.isSemesterExam(curPeriod)) {
+        isGrade12Exam = true;
+      }
     }
 
     if (isGrade9Exam) {
@@ -451,8 +453,7 @@ const Calculations = {
 
     const totalCoef = activeSubs.reduce((sum, s) => {
       const c = parseFloat(s.coef);
-      // If coef is a valid number (including 0), respect it! Fallback to s.max/50 only if undefined/null/NaN
-      const coefVal = (!isNaN(c) && c >= 0) ? c : (s.max ? (parseFloat(s.max) / 50) : 1.0);
+      const coefVal = (!isNaN(c) && c > 0) ? c : (s.max ? (parseFloat(s.max) / 50) : 1.0);
       return sum + coefVal;
     }, 0);
     return parseFloat(totalCoef.toFixed(2));
@@ -468,16 +469,16 @@ const Calculations = {
   calculateTotal(studentScore, subjects, rules = null, isG12 = null, isGrade12Exam = false, isGrade9Exam = false) {
     if (!studentScore) return 0;
 
-    // Check if student has ANY subject score entered (including 0)
-    const hasAnySubjectScores = Array.isArray(subjects) && subjects.some(sub => {
+    const activeSubs = Array.isArray(subjects) ? subjects.filter(s => s.includeInTotal !== false) : [];
+
+    // Check if student has any explicitly entered subject score (including 0)
+    const hasAnySubjectEntered = activeSubs.some(sub => {
       const raw = studentScore[sub.id];
-      if (raw === undefined || raw === null || raw === '') return false;
-      const val = parseFloat(raw);
-      return !isNaN(val);
+      return raw !== undefined && raw !== null && raw !== '' && raw !== '-' && !isNaN(parseFloat(raw));
     });
 
-    // Only if student score has an explicit total from Excel/import and NO individual subjects at all
-    if (!hasAnySubjectScores && studentScore.total !== undefined && studentScore.total !== null && studentScore.total !== '') {
+    // If student score already has an explicit total from Excel and no individual subjects
+    if (!hasAnySubjectEntered && studentScore.total !== undefined && studentScore.total !== null && studentScore.total !== '') {
       const explicitTotal = parseFloat(studentScore.total);
       if (!isNaN(explicitTotal) && explicitTotal > 0) {
         return parseFloat(explicitTotal.toFixed(2));
@@ -488,30 +489,40 @@ const Calculations = {
     if (typeof isG12 !== 'boolean') {
       isG12 = this.isGrade12(typeof window !== 'undefined' ? window.App?.state : null);
     }
-    // Auto-resolve isGrade9Exam if not explicitly passed as a boolean
+    // Auto-resolve isGrade9Exam if not explicitly passed
     if (typeof isGrade9Exam !== 'boolean') {
       const st = typeof window !== 'undefined' ? window.App?.state : null;
       isGrade9Exam = this.isGrade9(st) && Array.isArray(subjects) && (subjects.some(s => s.id === 'khmer_essay' || s.id === 'khmer_dictation'));
     }
-    if (typeof isGrade12Exam !== 'boolean') {
-      isGrade12Exam = false;
+    if (!isGrade9Exam && typeof window !== 'undefined' && window.App) {
+      const curPeriod = window.App.currentMonthId || window.App.quickScoreMonthId || window.App.rankingMonthId;
+      const st = window.App.state;
+      if (curPeriod && this.isGrade9Exam(curPeriod, st)) {
+        isGrade9Exam = true;
+      }
+    }
+    // Auto-resolve isGrade12Exam if not explicitly passed
+    if (!isGrade12Exam && isG12 && typeof window !== 'undefined' && window.App) {
+      const curPeriod = window.App.currentMonthId || window.App.quickScoreMonthId || window.App.rankingMonthId;
+      if (curPeriod && this.isSemesterExam(curPeriod)) {
+        isGrade12Exam = true;
+      }
     }
 
     let total = 0;
     let hasSubScore = false;
-    const activeSubs = Array.isArray(subjects) ? subjects.filter(s => s.includeInTotal !== false) : [];
     const engThreshold = (rules && typeof rules.englishBonusThreshold === 'number') ? rules.englishBonusThreshold : 25;
 
     activeSubs.forEach(sub => {
       let raw = studentScore[sub.id];
       if ((raw === undefined || raw === null || raw === '' || raw === 0) && (sub.id === 'khmer' || /ខ្មែរ/i.test(sub.name))) {
-        const essay = parseFloat(studentScore.khmer_essay);
-        const dict = parseFloat(studentScore.khmer_dictation);
-        if (!isNaN(essay) || !isNaN(dict)) {
-          raw = (isNaN(essay) ? 0 : essay) + (isNaN(dict) ? 0 : dict);
+        const essay = parseFloat(studentScore.khmer_essay) || 0;
+        const dict = parseFloat(studentScore.khmer_dictation) || 0;
+        if (essay > 0 || dict > 0) {
+          raw = essay + dict;
         }
       }
-      if (raw !== undefined && raw !== null && raw !== '') {
+      if (raw !== undefined && raw !== null && raw !== '' && raw !== '-') {
         const val = parseFloat(raw);
         if (!isNaN(val)) {
           hasSubScore = true;
@@ -526,24 +537,24 @@ const Calculations = {
             }
             // If val <= engThreshold (<= 25), contributes 0 (do not add to total)
           } else {
-            total += val;
+            total += Math.max(0, val);
           }
         }
       }
     });
 
     // Fallback for Grade 9 Exam if student has combined 'khmer' score instead of separate 'khmer_essay' and 'khmer_dictation'
-    if (isGrade9Exam && studentScore.khmer !== undefined && studentScore.khmer !== null && studentScore.khmer !== '' && !studentScore.khmer_essay && !studentScore.khmer_dictation) {
+    if (isGrade9Exam && studentScore.khmer && !studentScore.khmer_essay && !studentScore.khmer_dictation) {
       const val = parseFloat(studentScore.khmer);
       if (!isNaN(val)) {
         hasSubScore = true;
-        total += val;
+        total += Math.max(0, val);
       }
     }
 
     if (!hasSubScore && studentScore.total !== undefined && studentScore.total !== null && studentScore.total !== '') {
-      const parsedTotal = parseFloat(studentScore.total);
-      if (!isNaN(parsedTotal)) return parsedTotal;
+      const explicitTotal = parseFloat(studentScore.total);
+      if (!isNaN(explicitTotal)) return explicitTotal;
     }
     return parseFloat(total.toFixed(2));
   },
@@ -555,17 +566,15 @@ const Calculations = {
   // 3. Monthly: total / sum of coefficients of tested subjects (excluding English only in Grade 12)
   //    For other grades: English coefficient is included in the divisor
   // 4. Monthly averages are NOT rounded to integer; they keep standard decimal precision
-  calculateAverage(total, subjects, studentScore = null, rules = null, isGrade12Exam = false, isG12 = null, periodScores = null, isGrade9Exam = false, students = null) {
-    // Check if student has ANY subject score entered (including 0)
-    const hasAnySubjectScores = studentScore && Array.isArray(subjects) && subjects.some(sub => {
+  calculateAverage(total, subjects, studentScore = null, rules = null, isGrade12Exam = false, isG12 = null, periodScores = null, isGrade9Exam = false) {
+    const activeSubs = Array.isArray(subjects) ? subjects.filter(s => s.includeInTotal !== false) : [];
+    const hasAnySubjectEntered = studentScore && activeSubs.some(sub => {
       const raw = studentScore[sub.id];
-      if (raw === undefined || raw === null || raw === '') return false;
-      const val = parseFloat(raw);
-      return !isNaN(val);
+      return raw !== undefined && raw !== null && raw !== '' && raw !== '-' && !isNaN(parseFloat(raw));
     });
 
-    // Only if student score has an explicit imported average and NO individual subjects at all
-    if (!hasAnySubjectScores && studentScore && studentScore.avg !== undefined && studentScore.avg !== null && studentScore.avg !== '') {
+    // Only fall back to precomputed average if NO individual subjects were entered at all
+    if (!hasAnySubjectEntered && studentScore && studentScore.avg !== undefined && studentScore.avg !== null && studentScore.avg !== '') {
       const explicitAvg = parseFloat(studentScore.avg);
       if (!isNaN(explicitAvg) && explicitAvg > 0) {
         const dec = (rules && typeof rules.decimalPlaces === 'number') ? rules.decimalPlaces : 2;
@@ -578,13 +587,24 @@ const Calculations = {
     if (typeof isG12 !== 'boolean') {
       isG12 = this.isGrade12(typeof window !== 'undefined' ? window.App?.state : null);
     }
-    // Auto-resolve isGrade9Exam if not explicitly passed as a boolean
+    // Auto-resolve isGrade9Exam if not explicitly passed
     if (typeof isGrade9Exam !== 'boolean') {
       const st = typeof window !== 'undefined' ? window.App?.state : null;
       isGrade9Exam = this.isGrade9(st) && Array.isArray(subjects) && (subjects.some(s => s.id === 'khmer_essay' || s.id === 'khmer_dictation'));
     }
-    if (typeof isGrade12Exam !== 'boolean') {
-      isGrade12Exam = false;
+    if (!isGrade9Exam && typeof window !== 'undefined' && window.App) {
+      const curPeriod = window.App.currentMonthId || window.App.quickScoreMonthId || window.App.rankingMonthId;
+      const st = window.App.state;
+      if (curPeriod && this.isGrade9Exam(curPeriod, st)) {
+        isGrade9Exam = true;
+      }
+    }
+    // Auto-resolve isGrade12Exam if not explicitly passed
+    if (!isGrade12Exam && isG12 && typeof window !== 'undefined' && window.App) {
+      const curPeriod = window.App.currentMonthId || window.App.quickScoreMonthId || window.App.rankingMonthId;
+      if (curPeriod && this.isSemesterExam(curPeriod)) {
+        isGrade12Exam = true;
+      }
     }
 
     if (isGrade9Exam) {
@@ -601,7 +621,7 @@ const Calculations = {
 
     let avg = 0;
     if (rules && rules.monthlyFormula === 'count') {
-      const testedSubs = this.getTestedSubjects(subjects, periodScores, studentScore, students);
+      const testedSubs = this.getTestedSubjects(subjects, periodScores, studentScore);
       const activeSubs = testedSubs.filter(s => {
         if (s.includeInTotal === false) return false;
         if (isG12 && this.isEnglishSubject(s) && (rules?.applyEnglishBonusRule !== false)) return false;
@@ -612,7 +632,7 @@ const Calculations = {
       avg = total / count;
     } else {
       // Divisor is strictly the sum of coefficients of subjects actually tested by the teacher
-      const totalCoef = this.getTotalCoefficient(subjects, studentScore, isGrade12Exam, rules, isG12, periodScores, students, isGrade9Exam);
+      const totalCoef = this.getTotalCoefficient(subjects, studentScore, isGrade12Exam, rules, isG12, periodScores, null, isGrade9Exam);
       if (totalCoef === 0) return 0;
       avg = total / totalCoef;
     }
@@ -699,9 +719,8 @@ const Calculations = {
     const passMark = (rules && typeof rules.passScore === 'number') ? rules.passScore : 25;
     const isPass = annualAverage >= passMark;
 
-    const gradeLevel = this.getGradeLevel(state);
-
     if (isPass) {
+      const gradeLevel = this.getGradeLevel(state);
       if (gradeLevel === 9) {
         return 'មានសិទ្ធិប្រឡងសញ្ញាបត្របឋមភូមិ';
       } else if (gradeLevel === 12) {
@@ -710,53 +729,40 @@ const Calculations = {
         // Grades 7, 8, 10, 11 (ថ្នាក់ទី ៧, ៨, ១០, ១១)
         return 'ត្រូវបានឡើងថ្នាក់';
       }
-    } else {
+    } else if (annualAverage >= 1) {
+      const gradeLevel = this.getGradeLevel(state);
       if (gradeLevel === 12) {
         return 'គ្មានសិទ្ធិប្រឡងសញ្ញាបត្រទុតិយភូមិ';
       } else if (gradeLevel === 9) {
         return 'គ្មានសិទ្ធិប្រឡងសញ្ញាបត្របឋមភូមិ';
-      } else if (annualAverage >= 1) {
-        return 'ត្រូវប្រឡងឡើងថ្នាក់';
-      } else {
-        return 'ត្រូវរៀនត្រួតថ្នាក់';
       }
+      return 'ត្រូវប្រឡងឡើងថ្នាក់';
+    } else {
+      return 'ត្រូវរៀនត្រួតថ្នាក់';
     }
   },
 
   // Calculate competition ranks (1, 2, 2, 4...) identical to Excel RANK()
-  // Primary ranking is strictly based on Average (មធ្យមភាគ).
-  // If two students have identical averages, tieBreakerField (e.g. total score or raw average) breaks the tie.
-  calculateRanks(records, primaryField = 'avg', tieBreakerField = null) {
+  calculateRanks(records, scoreField = 'avg') {
     const sorted = [...records].sort((a, b) => {
-      const valA = parseFloat(a[primaryField]) || 0;
-      const valB = parseFloat(b[primaryField]) || 0;
-      if (Math.abs(valB - valA) > 0.00001) {
-        return valB - valA;
-      }
-      if (tieBreakerField) {
-        const tbA = parseFloat(a[tieBreakerField]) || 0;
-        const tbB = parseFloat(b[tieBreakerField]) || 0;
-        return tbB - tbA;
-      }
-      return 0;
+      const valA = parseFloat(a[scoreField]) || 0;
+      const valB = parseFloat(b[scoreField]) || 0;
+      return valB - valA;
     });
 
     const rankMap = new Map();
     let currentRank = 1;
 
     for (let i = 0; i < sorted.length; i++) {
-      const primaryScore = parseFloat(sorted[i][primaryField]) || 0;
-      if (primaryScore <= 0) {
+      const score = parseFloat(sorted[i][scoreField]) || 0;
+      if (score <= 0) {
         rankMap.set(sorted[i].id, '-');
         continue;
       }
 
       if (i > 0) {
-        const prevPrimary = parseFloat(sorted[i - 1][primaryField]) || 0;
-        const prevTie = tieBreakerField ? (parseFloat(sorted[i - 1][tieBreakerField]) || 0) : 0;
-        const currTie = tieBreakerField ? (parseFloat(sorted[i][tieBreakerField]) || 0) : 0;
-
-        if (Math.abs(primaryScore - prevPrimary) < 0.00001 && Math.abs(currTie - prevTie) < 0.00001) {
+        const prevScore = parseFloat(sorted[i - 1][scoreField]) || 0;
+        if (score === prevScore) {
           rankMap.set(sorted[i].id, rankMap.get(sorted[i - 1].id));
         } else {
           currentRank = i + 1;
@@ -800,28 +806,30 @@ const Calculations = {
       let grade = '';
       let rank = null;
 
-      // Check if student has actual subject scores (including 0)
+      // Check if student has actual subject scores
       const hasSubjectScores = subjects && subjects.some(sub => {
         const raw = scoreObj[sub.id];
-        if (raw === undefined || raw === null || raw === '') return false;
+        if (raw === undefined || raw === null || raw === '' || raw === '-') return false;
         const v = parseFloat(raw);
         return !isNaN(v);
       });
-      const hasLegacyKhmer = isGrade9Exam && scoreObj['khmer'] !== undefined && scoreObj['khmer'] !== null && scoreObj['khmer'] !== '' && !isNaN(parseFloat(scoreObj['khmer']));
+      const hasLegacyKhmer = isGrade9Exam && scoreObj['khmer'] !== undefined && scoreObj['khmer'] !== '' && !isNaN(parseFloat(scoreObj['khmer']));
 
-      // If scores are present in scoreObj, calculate dynamically. Only fall back to historical sheet if scoreObj is populated
+      // If scores are present in scoreObj, calculate dynamically. Fall back to historical ranking if no subject scores entered
       if (hasSubjectScores || hasLegacyKhmer) {
         total = this.calculateTotal(scoreObj, subjects, rules, isG12, isGrade12Exam, isGrade9Exam);
-        avg = this.calculateAverage(total, subjects, scoreObj, rules, isGrade12Exam, isG12, periodScores, isGrade9Exam, state.students);
+        avg = this.calculateAverage(total, subjects, scoreObj, rules, isGrade12Exam, isG12, periodScores, isGrade9Exam);
       } else if (hist && hist.total > 0) {
         total = hist.total;
         avg = parseFloat(Number(hist.avg).toFixed(2));
         grade = hist.grade;
+        rank = hist.rank;
       } else if (scoreObj && scoreObj.total > 0) {
         total = scoreObj.total;
         const div = periodDivisor || (isGrade9Exam ? 8.4 : 12.50);
         avg = parseFloat(scoreObj.avg ? Number(scoreObj.avg).toFixed(2) : (total / div).toFixed(2));
         grade = scoreObj.grade || '';
+        rank = scoreObj.rank || null;
       }
 
       const { grade: calcGrade, mention, pass, colorClass } = this.getGradeAndMention(avg, rules);
@@ -834,8 +842,7 @@ const Calculations = {
         effectiveScores.khmer = essayVal + dictVal;
       }
 
-      // Check for explicit locked rank (e.g. from Grace Marks or manual lock)
-      // NOTE: hist.rank must NOT permanently freeze ranks when scores change
+      // Check for explicit locked rank (ONLY from Grace Marks lockedRank or explicit manual fixedRank)
       const explicitLockedRank = (scoreObj.lockedRank !== undefined && scoreObj.lockedRank !== null && scoreObj.lockedRank !== '')
         ? scoreObj.lockedRank
         : ((scoreObj.fixedRank !== undefined && scoreObj.fixedRank !== null && scoreObj.fixedRank !== '')
@@ -853,23 +860,20 @@ const Calculations = {
         mention,
         pass,
         colorClass,
-        fixedRank: explicitLockedRank,
+        fixedRank: explicitLockedRank || (hasSubjectScores ? null : rank),
         divisor: periodDivisor
       };
     });
 
-    // Compute ranks: strictly prioritize Average (មធ្យមភាគ) for ranking, with total score as tie-breaker
-    const rankMap = this.calculateRanks(list, 'avg', 'total');
+    // Compute ranks: prioritize total score for ranking so students with different totals don't tie when rounded average is identical
+    const rankField = list.some(item => typeof item.total === 'number' && item.total > 0) ? 'total' : 'avg';
+    const rankMap = this.calculateRanks(list, rankField);
     list.forEach(item => {
       // Prioritize explicit locked/fixed rank if provided so rankings strictly never change after grace marks
       if (item.fixedRank && item.fixedRank !== '-') {
         item.rank = item.fixedRank;
       } else {
-        const calculatedRank = rankMap.get(item.id);
-        const hasScores = (item.total > 0 || item.avg > 0);
-        item.rank = (hasScores && calculatedRank !== undefined && calculatedRank !== null && calculatedRank !== '-')
-          ? calculatedRank
-          : '-';
+        item.rank = rankMap.get(item.id) || '-';
       }
     });
 
@@ -879,16 +883,11 @@ const Calculations = {
   // Sort monthly ranking records by specific criteria
   sortRankingData(records, sortBy = 'rank', sortOrder = 'asc') {
     const orderMult = sortOrder === 'desc' ? -1 : 1;
-    const parseRank = r => {
-      if (r === '-' || r === null || r === undefined || r === '') return 9999;
-      const n = parseInt(r, 10);
-      return isNaN(n) ? 9999 : n;
-    };
 
     return [...records].sort((a, b) => {
       if (sortBy === 'rank') {
-        const rankA = parseRank(a.rank);
-        const rankB = parseRank(b.rank);
+        const rankA = (a.rank === '-' || a.rank === null || a.rank === undefined || a.rank === '') ? 9999 : parseInt(a.rank, 10);
+        const rankB = (b.rank === '-' || b.rank === null || b.rank === undefined || b.rank === '') ? 9999 : parseInt(b.rank, 10);
         return (rankA - rankB) * orderMult;
       } else if (sortBy === 'id') {
         return (a.id - b.id) * orderMult;
@@ -925,12 +924,10 @@ const Calculations = {
       const stObj = pScores[st.id];
       if (!stObj || typeof stObj !== 'object') continue;
       const hasSubjectScore = subjects.some(sub => {
-        const raw = stObj[sub.id];
-        if (raw === undefined || raw === null || raw === '') return false;
-        const val = parseFloat(raw);
-        return !isNaN(val);
+        const val = parseFloat(stObj[sub.id]);
+        return !isNaN(val) && val > 0;
       });
-      const hasLegacyKhmer = this.isGrade9Exam(periodId, state) && stObj['khmer'] !== undefined && stObj['khmer'] !== null && stObj['khmer'] !== '' && !isNaN(parseFloat(stObj['khmer']));
+      const hasLegacyKhmer = this.isGrade9Exam(periodId, state) && parseFloat(stObj['khmer']) > 0;
       const hasTotalScore = typeof stObj.total === 'number' && stObj.total > 0;
       if (hasSubjectScore || hasLegacyKhmer || hasTotalScore) {
         testedCount++;
@@ -1053,7 +1050,7 @@ const Calculations = {
       });
 
       if (hasExam && rawList.some(r => typeof r.avg === 'number' && r.avg > 0)) {
-        const rankMap = this.calculateRanks(rawList, 'avg', 'rawAvg');
+        const rankMap = this.calculateRanks(rawList, 'rawAvg');
         rawList.forEach(r => {
           r.rank = rankMap.get(r.id) || '-';
         });
@@ -1103,7 +1100,7 @@ const Calculations = {
       });
 
       if (hasExam && rawList.some(r => typeof r.avg === 'number' && r.avg > 0)) {
-        const rankMap = this.calculateRanks(rawList, 'avg', 'rawAvg');
+        const rankMap = this.calculateRanks(rawList, 'rawAvg');
         rawList.forEach(r => {
           r.rank = rankMap.get(r.id) || '-';
         });
@@ -1151,7 +1148,7 @@ const Calculations = {
       });
 
       if (rawList.some(r => typeof r.avg === 'number' && r.avg > 0)) {
-        const rankMap = this.calculateRanks(rawList, 'avg', 'rawAvg');
+        const rankMap = this.calculateRanks(rawList, 'rawAvg');
         rawList.forEach(r => {
           r.rank = rankMap.get(r.id) || '-';
         });
@@ -1164,16 +1161,11 @@ const Calculations = {
   // Sort semester ranking records
   sortSemesterRankingData(records, sortBy = 'rank', sortOrder = 'asc') {
     const orderMult = sortOrder === 'desc' ? -1 : 1;
-    const parseRank = r => {
-      if (r === '-' || r === null || r === undefined || r === '') return 9999;
-      const n = parseInt(r, 10);
-      return isNaN(n) ? 9999 : n;
-    };
 
     return [...records].sort((a, b) => {
       if (sortBy === 'rank') {
-        const rankA = parseRank(a.rank);
-        const rankB = parseRank(b.rank);
+        const rankA = (a.rank === '-' || a.rank === null || a.rank === undefined) ? 9999 : parseInt(a.rank, 10);
+        const rankB = (b.rank === '-' || b.rank === null || b.rank === undefined) ? 9999 : parseInt(b.rank, 10);
         return (rankA - rankB) * orderMult;
       } else if (sortBy === 'id') {
         return (a.id - b.id) * orderMult;
@@ -1260,12 +1252,16 @@ const Calculations = {
   // Calculate Semester 1, 2 and Annual Summary
   computeAllYearSummaries(state) {
     const isG12 = this.isGrade12(state);
-    const rules = state.gradingRules || state.schoolConfig?.gradingRules;
-    const sem1Months = ['month_11', 'month_12', 'month_01', 'month_02']; // Note: March moved to Semester 2
-    // Grade 12 rule: Semester 2 only ever tests March (month_03) and May (month_05)
-    const sem2Months = isG12
-      ? ['month_03', 'month_05']
+    const sem1CandidateMonths = (state.months && Array.isArray(state.months))
+      ? state.months.filter(m => m.sem === 1 && !m.isExam && m.id !== 'sem_1').map(m => m.id)
+      : ['month_11', 'month_12', 'month_01', 'month_02'];
+    const sem1Months = sem1CandidateMonths.length > 0 ? sem1CandidateMonths : ['month_11', 'month_12', 'month_01', 'month_02'];
+
+    // Flexible Semester 2: dynamically includes all semester 2 months that have actual entered scores
+    const sem2CandidateMonths = (state.months && Array.isArray(state.months))
+      ? state.months.filter(m => m.sem === 2 && !m.isExam && m.id !== 'sem_2').map(m => m.id)
       : ['month_03', 'month_04', 'month_05', 'month_06', 'month_07', 'month_08', 'month_09'];
+    const sem2Months = sem2CandidateMonths.length > 0 ? sem2CandidateMonths : ['month_03', 'month_04', 'month_05', 'month_06', 'month_07', 'month_08', 'month_09'];
 
     // Pre-calculate month averages
     const monthAverages = {};
@@ -1279,22 +1275,6 @@ const Calculations = {
 
     const hasSem1Exam = this.hasPeriodEnteredScores('sem_1', state);
     const hasSem2Exam = this.hasPeriodEnteredScores('sem_2', state);
-
-    // Also pre-calculate semester exam periods if entered
-    if (hasSem1Exam && !monthAverages['sem_1']) {
-      const pData = this.computePeriodData('sem_1', state);
-      monthAverages['sem_1'] = {};
-      pData.forEach(item => {
-        monthAverages['sem_1'][item.id] = item.avg;
-      });
-    }
-    if (hasSem2Exam && !monthAverages['sem_2']) {
-      const pData = this.computePeriodData('sem_2', state);
-      monthAverages['sem_2'] = {};
-      pData.forEach(item => {
-        monthAverages['sem_2'][item.id] = item.avg;
-      });
-    }
 
     // Identify tested months in each semester (only months that actually have entered scores are counted in divisor)
     const testedSem1Months = sem1Months.filter(mid => this.hasPeriodEnteredScores(mid, state));
@@ -1372,7 +1352,7 @@ const Calculations = {
         rawYearAvg = parseFloat((((rawSem1Avg || sem1Avg) + (rawSem2Avg || sem2Avg)) / 2).toFixed(2));
       }
 
-      const { grade, mention, pass, colorClass } = this.getGradeAndMention(yearAvg, rules);
+      const { grade, mention, pass, colorClass } = this.getGradeAndMention(yearAvg);
       const remark = yearAvg > 0 ? this.getTeacherRemark(yearAvg, state, rules) : 'មិនទាន់មានលទ្ធផល';
 
       return {
@@ -1405,7 +1385,7 @@ const Calculations = {
     });
 
     if (summaries.some(s => typeof s.yearAvg === 'number' && s.yearAvg > 0)) {
-      const rankMap = this.calculateRanks(summaries, 'yearAvg', 'rawYearAvg');
+      const rankMap = this.calculateRanks(summaries, 'rawYearAvg');
       summaries.forEach(s => {
         s.yearRank = rankMap.get(s.id) || '-';
       });
@@ -1425,9 +1405,6 @@ const Calculations = {
     const s1PeriodScores = state.scoresByPeriod?.['sem_1'] || {};
     const s2PeriodScores = state.scoresByPeriod?.['sem_2'] || {};
 
-    const rules = state.gradingRules || state.schoolConfig?.gradingRules;
-    const passScore = (rules && typeof rules.passScore === 'number') ? rules.passScore : 25.00;
-
     const list = summaries.map(s => {
       const st = studentMap.get(s.id) || {};
       let pAbs = 0, npAbs = 0;
@@ -1442,23 +1419,25 @@ const Calculations = {
 
       const yearAvg = typeof s.yearAvg === 'number' ? s.yearAvg : parseFloat(s.yearAvg);
       const hasYearAvg = typeof yearAvg === 'number' && !isNaN(yearAvg) && yearAvg > 0;
-      const isFail = hasYearAvg && yearAvg < passScore;
+      const isFail = hasYearAvg && yearAvg < 25.00;
 
-      // Identify weak subjects (< half of max)
+      // Identify weak subjects (< 5.0 out of 10)
       const weakSubjects = [];
       if (isFail) {
         subjects.forEach(sub => {
           const sc1 = s1PeriodScores[s.id]?.[sub.id];
           const sc2 = s2PeriodScores[s.id]?.[sub.id];
-          const v1 = parseFloat(sc1);
-          const v2 = parseFloat(sc2);
+          const n1 = parseFloat(sc1);
+          const n2 = parseFloat(sc2);
+          const has1 = !isNaN(n1) && n1 >= 0;
+          const has2 = !isNaN(n2) && n2 >= 0;
           let subYr = 0;
-          if (!isNaN(v1) && !isNaN(v2)) {
-            subYr = (v1 + v2) / 2;
-          } else if (!isNaN(v1)) {
-            subYr = v1;
-          } else if (!isNaN(v2)) {
-            subYr = v2;
+          if (has1 && has2) {
+            subYr = (n1 + n2) / 2;
+          } else if (has1) {
+            subYr = n1;
+          } else if (has2) {
+            subYr = n2;
           }
           const threshold = (sub.max || 10) / 2;
           if (subYr > 0 && subYr < threshold) {
@@ -1467,14 +1446,10 @@ const Calculations = {
         });
       }
 
-      const gradeLevel = this.getGradeLevel(state);
-      const isG12 = gradeLevel === 12;
-      const isG9 = gradeLevel === 9;
-
-      let status = isG12 ? 'មានសិទ្ធិប្រឡងបាក់ឌុប' : (isG9 ? 'មានសិទ្ធិប្រឡងឌីប្លូម' : 'ឡើងថ្នាក់');
+      let status = 'ឡើងថ្នាក់';
       let statusCode = 'pass';
       let statusClass = 'status-pass';
-      let decisionReason = `ជាប់មធ្យមភាគប្រចាំឆ្នាំ (≥ ${this.toKhmerDigits(passScore.toFixed(2))})`;
+      let decisionReason = 'ជាប់មធ្យមភាគប្រចាំឆ្នាំ (≥ ២៥.០០)';
 
       if (!hasYearAvg) {
         status = 'មិនទាន់មានលទ្ធផល';
@@ -1482,26 +1457,16 @@ const Calculations = {
         statusClass = 'status-no-score';
         decisionReason = 'មិនទាន់មានទិន្នន័យពិន្ទុពេញលេញ';
       } else if (isFail) {
-        if (isG12) {
-          status = 'គ្មានសិទ្ធិប្រឡងបាក់ឌុប';
-          statusCode = 'repeat';
-          statusClass = 'status-repeat';
-          decisionReason = `ធ្លាក់មធ្យមភាគប្រចាំឆ្នាំ (< ${this.toKhmerDigits(passScore.toFixed(2))}) គ្មានសិទ្ធិប្រឡងបាក់ឌុប`;
-        } else if (isG9) {
-          status = 'គ្មានសិទ្ធិប្រឡងឌីប្លូម';
-          statusCode = 'repeat';
-          statusClass = 'status-repeat';
-          decisionReason = `ធ្លាក់មធ្យមភាគប្រចាំឆ្នាំ (< ${this.toKhmerDigits(passScore.toFixed(2))}) គ្មានសិទ្ធិប្រឡងឌីប្លូម`;
-        } else if (totalAbs >= 30) {
+        if (totalAbs >= 30) {
           status = 'ត្រូវរៀនត្រួតថ្នាក់';
           statusCode = 'repeat';
           statusClass = 'status-repeat';
-          decisionReason = `ធ្លាក់មធ្យមភាគ (< ${passScore}) & អវត្តមាន ≥ ៣០ ដង (សរុប ${totalAbs} ដង)`;
+          decisionReason = `ធ្លាក់មធ្យមភាគ (<២៥) & អវត្តមាន ≥ ៣០ ដង (សរុប ${totalAbs} ដង)`;
         } else {
           status = 'ត្រូវប្រឡងឡើងថ្នាក់';
           statusCode = 'retest';
           statusClass = 'status-retest';
-          decisionReason = `ធ្លាក់មធ្យមភាគ (< ${passScore}) & អវត្តមាន < ៣០ ដង (សរុប ${totalAbs} ដង)`;
+          decisionReason = `ធ្លាក់មធ្យមភាគ (<២៥) & អវត្តមាន < ៣០ ដង (សរុប ${totalAbs} ដង)`;
         }
       }
 
