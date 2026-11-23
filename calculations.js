@@ -200,6 +200,52 @@ const Calculations = {
     };
   },
 
+  getShortSchoolName(schoolName) {
+    if (!schoolName) return 'វិ.ខ្មែរ-ជប៉ុន';
+    let name = String(schoolName).trim();
+    if (!name) return 'វិ.ខ្មែរ-ជប៉ុន';
+
+    if (name.startsWith('វិ.') || name.startsWith('អនុ.') || name.startsWith('ប.')) {
+      return name;
+    }
+
+    if (name.includes('ខ្មែរ-ជប៉ុន') || name.includes('ខ្មែរ - ជប៉ុន')) {
+      return 'វិ.ខ្មែរ-ជប៉ុន';
+    }
+
+    if (/^វិទ្យាល័យ[\s\u200B]*/.test(name)) {
+      const rest = name.replace(/^វិទ្យាល័យ[\s\u200B]*/, '').replace(/^មិត្តភាព[\s\u200B]*/, '').trim();
+      return 'វិ.' + rest;
+    }
+    if (/^អនុវិទ្យាល័យ[\s\u200B]*/.test(name)) {
+      const rest = name.replace(/^អនុវិទ្យាល័យ[\s\u200B]*/, '').trim();
+      return 'អនុ.' + rest;
+    }
+    if (/^សាលាបឋមសិក្សា[\s\u200B]*/.test(name)) {
+      const rest = name.replace(/^សាលាបឋមសិក្សា[\s\u200B]*/, '').trim();
+      return 'ប.' + rest;
+    }
+    if (/^បឋមសិក្សា[\s\u200B]*/.test(name)) {
+      const rest = name.replace(/^បឋមសិក្សា[\s\u200B]*/, '').trim();
+      return 'ប.' + rest;
+    }
+
+    return 'វិ.' + name;
+  },
+
+  formatSolarDateWithSchool(solarDate, schoolShort = 'វិ.ខ្មែរ-ជប៉ុន') {
+    if (!solarDate) return '';
+    let str = String(solarDate).trim();
+    if (!str) return '';
+
+    const match = str.match(/^(?:.*?)[\,\،\s]*(ថ្ងៃ(?:ទី)?\s*.*)$/);
+    if (match && match[1]) {
+      return `${schoolShort}, ${match[1].trim()}`;
+    }
+
+    return `${schoolShort}, ${str}`;
+  },
+
   getKhmerSolarDate(date, province = '') {
     if (!date) date = new Date();
     else if (typeof date === 'string') {

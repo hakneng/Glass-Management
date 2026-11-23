@@ -939,6 +939,36 @@ document.addEventListener('DOMContentLoaded', () => {
           btnSave.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.4)';
         }
       });
+
+      // 5. Direct Excel Paste on table (Multi-column & Multi-row from Excel)
+      table.addEventListener('paste', (e) => {
+        const startCell = e.target.closest('td.cell-editable');
+        if (!startCell) return;
+
+        const clipboardData = (e.clipboardData || window.clipboardData)?.getData('text');
+        if (!clipboardData) return;
+
+        const rawLines = clipboardData.split(/\r\n|\r|\n/);
+        if (rawLines.length > 0 && rawLines[rawLines.length - 1] === '') rawLines.pop();
+
+        const hasMultipleRows = rawLines.length > 1;
+        const hasMultipleCols = rawLines.some(l => l.includes('\t'));
+
+        if (!hasMultipleRows && !hasMultipleCols) {
+          return; // Single plain text cell paste, let standard contenteditable behavior happen
+        }
+
+        e.preventDefault();
+
+        // Multi-line or multi-column Excel data: open Smart Excel Paste Modal to map and create all students!
+        this.openExcelPasteModal();
+        const pasteInput = document.getElementById('paste-excel-unified-input');
+        if (pasteInput) {
+          pasteInput.value = clipboardData;
+          this.handleExcelUnifiedPasteInput();
+        }
+        this.showToast('📋 បានទទួលទិន្នន័យពី Excel រួចរាល់! សូមពិនិត្យមើលតារាង រួចចុច "អនុវត្ត"។', 'info');
+      });
     },
 
     printStudentsRoster() {
@@ -2532,6 +2562,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
     detectStudentColumns(headers, dataRows) {
       const numCols = Math.max(headers.length, ...dataRows.map(r => r.length));
+
+      // 1. Instant check for Standard Cambodian 17-Column Roster (or 16-Column without No.)
+      if (numCols === 17) {
+        const col2Gender = dataRows.slice(0, 10).every(r => {
+          const v = (r[2] || '').trim();
+          return !v || v === 'ប' || v === 'ស' || v === 'ប្រុស' || v === 'ស្រី' || v.toLowerCase() === 'm' || v.toLowerCase() === 'f';
+        });
+        const col3Dob = dataRows.slice(0, 10).some(r => {
+          const v = (r[3] || '').trim();
+          return /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(v) || /^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}$/.test(v);
+        });
+        const h0 = (headers[0] || '').toLowerCase();
+        const h1 = (headers[1] || '').toLowerCase();
+        const isHeader17 = h0.includes('ល.រ') || h0.includes('no') || h1.includes('ឈ្មោះ') || h1.includes('នាម');
+        if ((col2Gender && col3Dob) || isHeader17) {
+          return [
+            'ignore',      // 1. ល.រ
+            'name',        // 2. គោត្តនាម-នាម
+            'gender',      // 3. ភេទ
+            'dob',         // 4. ថ្ងៃខែឆ្នាំកំណើត
+            'pobVillage',  // 5. ភូមិកំណើត
+            'pobCommune',  // 6. ឃុំកំណើត
+            'pobDistrict', // 7. ស្រុកកំណើត
+            'pobProvince', // 8. ខេត្តកំណើត
+            'fatherName',  // 9. ឪពុកឈ្មោះ
+            'fatherJob',   // 10. មុខរបរឪពុក
+            'motherName',  // 11. ម្តាយឈ្មោះ
+            'motherJob',   // 12. មុខរបរម្តាយ
+            'curVillage',  // 13. ភូមិបច្ចុប្បន្ន
+            'curCommune',  // 14. ឃុំបច្ចុប្បន្ន
+            'curDistrict', // 15. ស្រុកបច្ចុប្បន្ន
+            'curProvince', // 16. ខេត្តបច្ចុប្បន្ន
+            'remarks'      // 17. ផ្សេងៗ
+          ];
+        }
+      } else if (numCols === 16) {
+        const col1Gender = dataRows.slice(0, 10).every(r => {
+          const v = (r[1] || '').trim();
+          return !v || v === 'ប' || v === 'ស' || v === 'ប្រុស' || v === 'ស្រី' || v.toLowerCase() === 'm' || v.toLowerCase() === 'f';
+        });
+        const col2Dob = dataRows.slice(0, 10).some(r => {
+          const v = (r[2] || '').trim();
+          return /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(v) || /^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}$/.test(v);
+        });
+        const h0 = (headers[0] || '').toLowerCase();
+        const isHeader16 = h0.includes('ឈ្មោះ') || h0.includes('នាម');
+        if ((col1Gender && col2Dob) || isHeader16) {
+          return [
+            'name',        // 1. គោត្តនាម-នាម
+            'gender',      // 2. ភេទ
+            'dob',         // 3. ថ្ងៃខែឆ្នាំកំណើត
+            'pobVillage',  // 4. ភូមិកំណើត
+            'pobCommune',  // 5. ឃុំកំណើត
+            'pobDistrict', // 6. ស្រុកកំណើត
+            'pobProvince', // 7. ខេត្តកំណើត
+            'fatherName',  // 8. ឪពុកឈ្មោះ
+            'fatherJob',   // 9. មុខរបរឪពុក
+            'motherName',  // 10. ម្តាយឈ្មោះ
+            'motherJob',   // 11. មុខរបរម្តាយ
+            'curVillage',  // 12. ភូមិបច្ចុប្បន្ន
+            'curCommune',  // 13. ឃុំបច្ចុប្បន្ន
+            'curDistrict', // 14. ស្រុកបច្ចុប្បន្ន
+            'curProvince', // 15. ខេត្តបច្ចុប្បន្ន
+            'remarks'      // 16. ផ្សេងៗ
+          ];
+        }
+      }
+
       const mapping = [];
 
       for (let c = 0; c < numCols; c++) {
@@ -2552,13 +2650,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (h.includes('ទីកន្លែងកំណើត') || (h.includes('កំណើត') && (h.includes('ទី') || h.includes('កន្លែង')))) {
           field = 'pob';
         } else if (h.includes('ភូមិ') && !h.includes('បច្ចុប្បន្ន')) {
-          field = 'pobVillage';
+          field = mapping.includes('pobVillage') ? 'curVillage' : 'pobVillage';
         } else if (h.includes('ឃុំ') && !h.includes('បច្ចុប្បន្ន')) {
-          field = 'pobCommune';
+          field = mapping.includes('pobCommune') ? 'curCommune' : 'pobCommune';
         } else if (h.includes('ស្រុក') && !h.includes('បច្ចុប្បន្ន')) {
-          field = 'pobDistrict';
+          field = mapping.includes('pobDistrict') ? 'curDistrict' : 'pobDistrict';
         } else if (h.includes('ខេត្ត') && !h.includes('បច្ចុប្បន្ន')) {
-          field = 'pobProvince';
+          field = mapping.includes('pobProvince') ? 'curProvince' : 'pobProvince';
         } else if (h.includes('ភូមិ') && h.includes('បច្ចុប្បន្ន')) {
           field = 'curVillage';
         } else if (h.includes('ឃុំ') && h.includes('បច្ចុប្បន្ន')) {
@@ -2579,8 +2677,18 @@ document.addEventListener('DOMContentLoaded', () => {
           field = 'motherJob';
         } else if (h.includes('ទូរស័ព្ទម្តាយ') || (h.includes('ម្តាយ') && (h.includes('ទូរស័ព្ទ') || h.includes('ទូស')))) {
           field = 'motherPhone';
+        } else if (h.includes('មុខរបរ') || h === 'អាជីព' || h === 'job') {
+          if (mapping.includes('fatherName') && !mapping.includes('fatherJob')) {
+            field = 'fatherJob';
+          } else if (mapping.includes('motherName') && !mapping.includes('motherJob')) {
+            field = 'motherJob';
+          } else {
+            field = !mapping.includes('fatherJob') ? 'fatherJob' : 'motherJob';
+          }
         } else if (h.includes('បច្ចុប្បន្ន') || h.includes('អាសយដ្ឋាន') || h.includes('ទីលំនៅ')) {
           field = 'address';
+        } else if (h.includes('ផ្សេងៗ') || h.includes('សម្គាល់') || h === 'remark' || h === 'remarks' || h === 'other') {
+          field = 'remarks';
         } else if (h.includes('អត្តលេខ')) {
           field = 'idCard';
         } else if (h.includes('ទូរស័ព្ទ') || h.includes('ទូសព្ទ')) {
@@ -2686,8 +2794,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modal && modal.style.display === 'flex') return; // already in modal
 
         const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-        if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable) {
-          return; // user is typing in a specific form input
+        // Do not intercept only if typing in regular input or textarea
+        if (activeTag === 'input' || activeTag === 'textarea') {
+          return;
         }
 
         const clip = (e.clipboardData || window.clipboardData);
@@ -3006,6 +3115,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
 
+          if (!st.pob && (st.pobVillage || st.pobCommune || st.pobDistrict || st.pobProvince)) {
+            st.pob = [st.pobVillage, st.pobCommune, st.pobDistrict, st.pobProvince].filter(Boolean).join(' ');
+          }
+          if (!st.address && (st.curVillage || st.curCommune || st.curDistrict || st.curProvince)) {
+            st.address = [st.curVillage, st.curCommune, st.curDistrict, st.curProvince].filter(Boolean).join(' ');
+          }
+
           newStudents.push(st);
         }
 
@@ -3062,6 +3178,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               st[col.field] = val;
             }
+          }
+
+          if (!st.pob && (st.pobVillage || st.pobCommune || st.pobDistrict || st.pobProvince)) {
+            st.pob = [st.pobVillage, st.pobCommune, st.pobDistrict, st.pobProvince].filter(Boolean).join(' ');
+          }
+          if (!st.address && (st.curVillage || st.curCommune || st.curDistrict || st.curProvince)) {
+            st.address = [st.curVillage, st.curCommune, st.curDistrict, st.curProvince].filter(Boolean).join(' ');
           }
         }
 
@@ -3130,6 +3253,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               st[col.field] = val;
             }
+          }
+
+          if (!st.pob && (st.pobVillage || st.pobCommune || st.pobDistrict || st.pobProvince)) {
+            st.pob = [st.pobVillage, st.pobCommune, st.pobDistrict, st.pobProvince].filter(Boolean).join(' ');
+          }
+          if (!st.address && (st.curVillage || st.curCommune || st.curDistrict || st.curProvince)) {
+            st.address = [st.curVillage, st.curCommune, st.curDistrict, st.curProvince].filter(Boolean).join(' ');
           }
 
           studentList.push(st);
@@ -4570,44 +4700,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      // Excel Column Paste directly into table cell
+      // Excel Multi-column & Multi-row Paste directly into table cells (Like Excel to Excel)
       container.addEventListener('paste', (e) => {
         if (!e.target.classList.contains('score-input')) return;
 
         const clipboardData = (e.clipboardData || window.clipboardData)?.getData('text');
         if (!clipboardData) return;
 
-        const lines = clipboardData.split(/\r\n|\r|\n/).map(l => l.trim()).filter(l => l.length > 0);
-        if (lines.length > 1) {
-          e.preventDefault();
-          const subjectId = e.target.getAttribute('data-subject-id');
-          const allInputsForSubject = Array.from(container.querySelectorAll(`.score-input[data-subject-id="${subjectId}"]`));
-          const startIndex = allInputsForSubject.indexOf(e.target);
+        const rawLines = clipboardData.split(/\r\n|\r|\n/);
+        // Remove trailing empty line that Excel always appends
+        if (rawLines.length > 0 && rawLines[rawLines.length - 1] === '') {
+          rawLines.pop();
+        }
 
-          if (startIndex >= 0) {
-            let appliedCount = 0;
-            for (let i = 0; i < lines.length && (startIndex + i) < allInputsForSubject.length; i++) {
-              const inp = allInputsForSubject[startIndex + i];
-              let val = parseFloat(lines[i]);
+        const hasMultipleRows = rawLines.length > 1;
+        const hasMultipleCols = rawLines.some(l => l.includes('\t'));
+
+        if (!hasMultipleRows && !hasMultipleCols) {
+          // Single cell paste without tabs or newlines, standard input behavior applies
+          return;
+        }
+
+        e.preventDefault();
+
+        const currentInput = e.target;
+        const currentTr = currentInput.closest('tr');
+        const tbody = document.getElementById('monthly-scores-tbody') || container.querySelector('tbody');
+        if (!tbody || !currentTr) return;
+
+        const allTrs = Array.from(tbody.querySelectorAll('tr[data-student-id]'));
+        const startRowIdx = allTrs.indexOf(currentTr);
+
+        const rowInputs = Array.from(currentTr.querySelectorAll('.score-input'));
+        const startColIdx = rowInputs.indexOf(currentInput);
+
+        if (startRowIdx < 0 || startColIdx < 0) return;
+
+        let appliedCells = 0;
+        let appliedStudents = 0;
+
+        for (let r = 0; r < rawLines.length && (startRowIdx + r) < allTrs.length; r++) {
+          const line = rawLines[r];
+          const cells = line.split('\t').map(c => c.trim());
+          const targetTr = allTrs[startRowIdx + r];
+          const targetInputs = Array.from(targetTr.querySelectorAll('.score-input'));
+          const stId = parseInt(targetTr.getAttribute('data-student-id'), 10);
+          if (isNaN(stId)) continue;
+
+          if (!this.state.scoresByPeriod[this.currentMonthId]) {
+            this.state.scoresByPeriod[this.currentMonthId] = {};
+          }
+          if (!this.state.scoresByPeriod[this.currentMonthId][stId]) {
+            this.state.scoresByPeriod[this.currentMonthId][stId] = {};
+          }
+
+          let studentModified = false;
+
+          for (let c = 0; c < cells.length && (startColIdx + c) < targetInputs.length; c++) {
+            const inp = targetInputs[startColIdx + c];
+            const subId = inp.getAttribute('data-subject-id');
+            const max = parseFloat(inp.getAttribute('data-max')) || 100;
+            const rawCell = cells[c];
+
+            if (rawCell === '' || rawCell === '-' || rawCell === 'x' || rawCell === 'X') {
+              inp.value = '';
+              inp.classList.remove('has-score');
+              delete this.state.scoresByPeriod[this.currentMonthId][stId][subId];
+              delete this.state.scoresByPeriod[this.currentMonthId][stId].lockedRank;
+              studentModified = true;
+              appliedCells++;
+            } else {
+              let val = parseFloat(rawCell);
               if (!isNaN(val)) {
-                const max = parseFloat(inp.getAttribute('data-max')) || 100;
                 if (val < 0) val = 0;
                 if (val > max) val = max;
                 inp.value = val;
-
-                const stId = parseInt(inp.getAttribute('data-student-id'), 10);
-                if (!this.state.scoresByPeriod[this.currentMonthId]) this.state.scoresByPeriod[this.currentMonthId] = {};
-                if (!this.state.scoresByPeriod[this.currentMonthId][stId]) this.state.scoresByPeriod[this.currentMonthId][stId] = {};
-                this.state.scoresByPeriod[this.currentMonthId][stId][subjectId] = val;
+                inp.classList.add('has-score');
+                this.state.scoresByPeriod[this.currentMonthId][stId][subId] = val;
                 delete this.state.scoresByPeriod[this.currentMonthId][stId].lockedRank;
 
-                this.updateMonthlyRowInPlace(stId);
-                appliedCount++;
+                // If editing khmer_essay or khmer_dictation, also maintain combined khmer score
+                const stObj = this.state.scoresByPeriod[this.currentMonthId][stId];
+                if (subId === 'khmer_essay' || subId === 'khmer_dictation') {
+                  const essayVal = parseFloat(stObj.khmer_essay) || 0;
+                  const dictVal = parseFloat(stObj.khmer_dictation) || 0;
+                  stObj.khmer = essayVal + dictVal;
+                }
+
+                studentModified = true;
+                appliedCells++;
               }
             }
-            this.saveState();
-            this.showToast(`📋 បាន Paste បញ្ចូលពិន្ទុ ${appliedCount} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
           }
+
+          if (studentModified) {
+            this.updateMonthlyRowInPlace(stId);
+            appliedStudents++;
+          }
+        }
+
+        if (appliedStudents > 0) {
+          this.saveState();
+          this.showToast(`📋 បាន Paste បញ្ចូលពិន្ទុ ${appliedStudents} នាក់ (${appliedCells} ក្រឡា) ពី Excel ដូច Excel ទៅ Excel ដោយជោគជ័យ!`, 'success');
         }
       });
 
@@ -8092,9 +8286,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Solar & Lunar date of today
       const today = new Date();
+      const schoolShort = this.getShortSchoolName ? this.getShortSchoolName(schoolName) : 'វិ.ខ្មែរ-ជប៉ុន';
       const todaySolar = (typeof Calculations !== 'undefined' && Calculations.getKhmerSolarDate)
-        ? Calculations.getKhmerSolarDate(today)
-        : ('ថ្ងៃទី' + String(today.getDate()).padStart(2, '0') + ' ខែ' + monthKhmerName + ' ឆ្នាំ' + today.getFullYear());
+        ? Calculations.getKhmerSolarDate(today, schoolShort)
+        : (`${schoolShort}, ថ្ងៃទី` + String(today.getDate()).padStart(2, '0') + ' ខែ' + monthKhmerName + ' ឆ្នាំ' + today.getFullYear());
 
       const flourishSvg = this.getRoyalFlourishSvg(mode === 'half' ? 95 : 120, mode === 'half' ? 9 : 11, '#002060');
 
@@ -14574,13 +14769,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const gradeText = (studentData && studentData.grade) || student.grade || 'A';
 
       const certDates = honorDates || this.getCertificateDates();
-      const prov = cfg.province || 'ខេត្តព្រៃវែង';
+      const schoolShort = this.getShortSchoolName ? this.getShortSchoolName(cfg.schoolName) : 'វិ.ខ្មែរ-ជប៉ុន';
       const todayDates = (window.Calculations && Calculations.getTodayKhmerDates)
-        ? Calculations.getTodayKhmerDates(prov)
-        : { lunarDate: '', solarDate: 'ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...' };
+        ? Calculations.getTodayKhmerDates(schoolShort)
+        : { lunarDate: '', solarDate: `${schoolShort}, ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...` };
 
       const lunarDate = (certDates && (certDates.lunarDate || certDates.lunar)) || cfg.lunarDate || todayDates.lunarDate || '';
-      const solarDate = (certDates && (certDates.solarDate || certDates.solar)) || cfg.solarDate || todayDates.solarDate || 'ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...';
+      const rawSolarDate = (certDates && (certDates.solarDate || certDates.solar)) || cfg.solarDate || todayDates.solarDate || 'ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...';
+      const solarDate = (this.formatSolarDateWithSchool ? this.formatSolarDateWithSchool(rawSolarDate, schoolShort) : rawSolarDate);
       const teacherName = cfg.teacherName || 'គ្រូបន្ទុកថ្នាក់';
       const principalName = this.getPrincipalDisplayName(cfg);
       const ministry = cfg.ministry || 'មន្ទីរអប់រំ យុវជន និងកីឡា';
@@ -16152,8 +16348,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      const prov = cfg.province || 'ខេត្តព្រៃវែង';
-      const todayDates = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(prov) : null;
+      const schoolShort = this.getShortSchoolName ? this.getShortSchoolName(cfg.schoolName) : 'វិ.ខ្មែរ-ជប៉ុន';
+      const todayDates = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(schoolShort) : null;
       const setLunar = document.getElementById('set-lunar-date');
       if (setLunar) {
         if (cfg.dateMode === 'manual' && cfg.lunarDate) {
@@ -16165,9 +16361,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const setSolar = document.getElementById('set-solar-date');
       if (setSolar) {
         if (cfg.dateMode === 'manual' && cfg.solarDate) {
-          setSolar.value = cfg.solarDate;
+          setSolar.value = (this.formatSolarDateWithSchool ? this.formatSolarDateWithSchool(cfg.solarDate, schoolShort) : cfg.solarDate);
         } else {
-          setSolar.value = todayDates ? todayDates.solarDate : (cfg.solarDate || '');
+          setSolar.value = todayDates ? todayDates.solarDate : ((this.formatSolarDateWithSchool ? this.formatSolarDateWithSchool(cfg.solarDate, schoolShort) : cfg.solarDate) || '');
         }
       }
 
@@ -17407,8 +17603,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSetRealtime.addEventListener('click', () => {
           const autoRadio = document.getElementById('set-date-mode-auto');
           if (autoRadio) autoRadio.checked = true;
-          const prov = document.getElementById('set-province')?.value.trim() || 'ខេត្តព្រៃវែង';
-          const today = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(prov) : null;
+          const schoolVal = document.getElementById('set-school-name')?.value.trim() || '';
+          const schoolShort = this.getShortSchoolName ? this.getShortSchoolName(schoolVal) : 'វិ.ខ្មែរ-ជប៉ុន';
+          const today = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(schoolShort) : null;
           if (today) {
             const setLunar = document.getElementById('set-lunar-date');
             const setSolar = document.getElementById('set-solar-date');
@@ -17450,7 +17647,7 @@ document.addEventListener('DOMContentLoaded', () => {
             principalName: document.getElementById('set-principal-name').value.trim(),
             dateMode: dateMode,
             lunarDate: document.getElementById('set-lunar-date').value.trim(),
-            solarDate: document.getElementById('set-solar-date').value.trim()
+            solarDate: (this.formatSolarDateWithSchool ? this.formatSolarDateWithSchool(document.getElementById('set-solar-date').value.trim(), this.getShortSchoolName(document.getElementById('set-school-name').value.trim())) : document.getElementById('set-solar-date').value.trim())
           };
 
           // Also sync with active class in classes array
@@ -20390,22 +20587,70 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================================
      * 13. CONFIGURABLE TABLE DATES (ចន្ទគតិ & សុរិយគតិ)
      * ========================================================= */
+    getShortSchoolName(schoolName) {
+      if (window.Calculations && typeof Calculations.getShortSchoolName === 'function') {
+        return Calculations.getShortSchoolName(schoolName);
+      }
+      if (!schoolName) return 'វិ.ខ្មែរ-ជប៉ុន';
+      let name = String(schoolName).trim();
+      if (!name) return 'វិ.ខ្មែរ-ជប៉ុន';
+      if (name.startsWith('វិ.') || name.startsWith('អនុ.') || name.startsWith('ប.')) return name;
+      if (name.includes('ខ្មែរ-ជប៉ុន') || name.includes('ខ្មែរ - ជប៉ុន')) return 'វិ.ខ្មែរ-ជប៉ុន';
+      if (/^វិទ្យាល័យ[\s\u200B]*/.test(name)) {
+        return 'វិ.' + name.replace(/^វិទ្យាល័យ[\s\u200B]*/, '').replace(/^មិត្តភាព[\s\u200B]*/, '').trim();
+      }
+      if (/^អនុវិទ្យាល័យ[\s\u200B]*/.test(name)) {
+        return 'អនុ.' + name.replace(/^អនុវិទ្យាល័យ[\s\u200B]*/, '').trim();
+      }
+      if (/^សាលាបឋមសិក្សា[\s\u200B]*/.test(name)) {
+        return 'ប.' + name.replace(/^សាលាបឋមសិក្សា[\s\u200B]*/, '').trim();
+      }
+      if (/^បឋមសិក្សា[\s\u200B]*/.test(name)) {
+        return 'ប.' + name.replace(/^បឋមសិក្សា[\s\u200B]*/, '').trim();
+      }
+      return 'វិ.' + name;
+    },
+
+    formatSolarDateWithSchool(solarDate, schoolShort = 'វិ.ខ្មែរ-ជប៉ុន') {
+      if (window.Calculations && typeof Calculations.formatSolarDateWithSchool === 'function') {
+        return Calculations.formatSolarDateWithSchool(solarDate, schoolShort);
+      }
+      if (!solarDate) return '';
+      let str = String(solarDate).trim();
+      if (!str) return '';
+      const match = str.match(/^(?:.*?)[\,\،\s]*(ថ្ងៃ(?:ទី)?\s*.*)$/);
+      if (match && match[1]) {
+        return `${schoolShort}, ${match[1].trim()}`;
+      }
+      return `${schoolShort}, ${str}`;
+    },
+
     getTableDates(tableKey) {
       const cfg = this.getActiveSchoolConfig ? this.getActiveSchoolConfig() : (this.state?.schoolConfig || {});
-      const prov = cfg.province || 'ខេត្តព្រៃវែង';
+      const schoolShort = this.getShortSchoolName(cfg.schoolName);
       const todayDates = (window.Calculations && Calculations.getTodayKhmerDates)
-        ? Calculations.getTodayKhmerDates(prov)
-        : { lunarDate: '', solarDate: 'ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...', lunar: '', solar: '' };
+        ? Calculations.getTodayKhmerDates(schoolShort)
+        : { lunarDate: '', solarDate: `${schoolShort}, ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...`, lunar: '', solar: '' };
+
+      const wrapDates = (d) => {
+        if (!d) return d;
+        const res = { ...d };
+        if (res.solarDate) {
+          res.solarDate = this.formatSolarDateWithSchool(res.solarDate, schoolShort);
+          res.solar = res.solarDate;
+        }
+        return res;
+      };
 
       if (!this.state) {
-        return {
+        return wrapDates({
           lunarDate: todayDates.lunarDate,
           solarDate: todayDates.solarDate,
           lunar: todayDates.lunarDate,
           solar: todayDates.solarDate,
           isAuto: true,
           isManual: false
-        };
+        });
       }
 
       this.state.tableDates = this.state.tableDates || {};
@@ -20415,26 +20660,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (item && item.isManual === true) {
         const lunarDate = item.lunarDate || item.lunar || '';
         const solarDate = item.solarDate || item.solar || '';
-        return {
+        return wrapDates({
           lunarDate,
           solarDate,
           lunar: lunarDate,
           solar: solarDate,
           isManual: true,
           isAuto: false
-        };
+        });
       }
 
       // 2. Explicit auto mode for this table
       if (item && item.isAuto === true) {
-        return {
+        return wrapDates({
           lunarDate: todayDates.lunarDate,
           solarDate: todayDates.solarDate,
           lunar: todayDates.lunarDate,
           solar: todayDates.solarDate,
           isAuto: true,
           isManual: false
-        };
+        });
       }
 
       const isPlaceholderSolar = (s) => !s || s.includes('.......') || s.includes('២០២...') || s.trim() === 'ថ្ងៃទី ០៣ ខែ វិច្ឆិកា ឆ្នាំ ២០២៥';
@@ -20446,14 +20691,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const solarDate = (item.solarDate || item.solar || '').trim();
 
         if ((!isPlaceholderSolar(solarDate) || !isPlaceholderLunar(lunarDate)) && (solarDate || lunarDate)) {
-          return {
+          return wrapDates({
             lunarDate,
             solarDate,
             lunar: lunarDate,
             solar: solarDate,
             isManual: true,
             isAuto: false
-          };
+          });
         }
       }
 
@@ -20462,25 +20707,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const confSolar = (curClass && curClass.solarDate) || cfg.solarDate || '';
       const confLunar = (curClass && curClass.lunarDate) || cfg.lunarDate || '';
       if (!isPlaceholderSolar(confSolar) && confSolar && cfg.dateMode !== 'auto') {
-        return {
+        return wrapDates({
           lunarDate: confLunar || '',
           solarDate: confSolar || '',
           lunar: confLunar || '',
           solar: confSolar || '',
           isManual: true,
           isAuto: false
-        };
+        });
       }
 
       // 5. Default: Auto real-time dynamic date according to the day the application is opened
-      return {
+      return wrapDates({
         lunarDate: todayDates.lunarDate,
         solarDate: todayDates.solarDate,
         lunar: todayDates.lunarDate,
         solar: todayDates.solarDate,
         isAuto: true,
         isManual: false
-      };
+      });
     },
 
     saveTableDates(tableKey, dates, applyToAll = false) {
@@ -20489,7 +20734,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const isAuto = dates.isAuto === true;
       const isManual = dates.isManual === true || (!isAuto && !!(dates.solarDate || dates.lunarDate));
       const lunarDate = (dates.lunarDate || dates.lunar || '').trim();
-      const solarDate = (dates.solarDate || dates.solar || '').trim();
+      const rawSolar = (dates.solarDate || dates.solar || '').trim();
+      const cfg = this.getActiveSchoolConfig ? this.getActiveSchoolConfig() : {};
+      const schoolShort = this.getShortSchoolName(cfg.schoolName);
+      const solarDate = rawSolar ? this.formatSolarDateWithSchool(rawSolar, schoolShort) : '';
       const dateObj = {
         lunarDate,
         solarDate,
@@ -20680,7 +20928,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applySelectedSolarDate(dObj) {
       if (!dObj || isNaN(dObj.getTime())) return;
       const cfg = this.getActiveSchoolConfig();
-      const prov = cfg.province || 'ខេត្តព្រៃវែង';
+      const schoolShort = this.getShortSchoolName(cfg.schoolName);
       const khmerDigits = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
       const toKhmerNum = num => String(num).split('').map(dig => khmerDigits[parseInt(dig, 10)] || dig).join('');
       const khmerMonths = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា','កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ'];
@@ -20691,7 +20939,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const solarInput = document.getElementById('modal-input-solar-date');
       if (solarInput) {
-        solarInput.value = `${prov ? prov + ', ' : ''}ថ្ងៃទី${dayStr} ខែ${monthStr} ឆ្នាំ${yearStr}`;
+        solarInput.value = `${schoolShort}, ថ្ងៃទី${dayStr} ខែ${monthStr} ឆ្នាំ${yearStr}`;
       }
 
       // Automatically compute and sync Khmer lunar date
@@ -20730,9 +20978,11 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     setBlankSolarDate() {
+      const cfg = this.getActiveSchoolConfig ? this.getActiveSchoolConfig() : {};
+      const schoolShort = this.getShortSchoolName(cfg.schoolName);
       const solarInput = document.getElementById('modal-input-solar-date');
       if (solarInput) {
-        solarInput.value = 'ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...';
+        solarInput.value = `${schoolShort}, ថ្ងៃទី ....... ខែ ....... ឆ្នាំ២០២...`;
       }
       const modeManualRadio = document.getElementById('modal-date-mode-manual');
       if (modeManualRadio) modeManualRadio.checked = true;
@@ -20833,8 +21083,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const modeAutoRadio = document.getElementById('modal-date-mode-auto');
           if (modeAutoRadio) modeAutoRadio.checked = true;
           const cfg = this.getActiveSchoolConfig();
-          const prov = cfg.province || 'ខេត្តព្រៃវែង';
-          const today = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(prov) : null;
+          const schoolShort = this.getShortSchoolName(cfg.schoolName);
+          const today = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(schoolShort) : null;
           if (today) {
             const solarInput = document.getElementById('modal-input-solar-date');
             const lunarInput = document.getElementById('modal-input-lunar-date');
@@ -20854,8 +21104,8 @@ document.addEventListener('DOMContentLoaded', () => {
         modeAutoRadio.addEventListener('change', (e) => {
           if (e.target.checked) {
             const cfg = this.getActiveSchoolConfig();
-            const prov = cfg.province || 'ខេត្តព្រៃវែង';
-            const today = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(prov) : null;
+            const schoolShort = this.getShortSchoolName(cfg.schoolName);
+            const today = (window.Calculations && Calculations.getTodayKhmerDates) ? Calculations.getTodayKhmerDates(schoolShort) : null;
             if (today) {
               const solarInput = document.getElementById('modal-input-solar-date');
               const lunarInput = document.getElementById('modal-input-lunar-date');
