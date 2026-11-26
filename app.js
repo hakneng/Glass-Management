@@ -16147,16 +16147,20 @@ document.addEventListener('DOMContentLoaded', () => {
       this.state.semesterRankings = target.semesterRankings || { sem1List: [], sem2List: [], yearList: [] };
       const tgtGrade = String(target.grade || target.name || '');
       const isTargetLowerSec = tgtGrade.includes('7') || tgtGrade.includes('8') || tgtGrade.includes('9') || tgtGrade.includes('៧') || tgtGrade.includes('៨') || tgtGrade.includes('៩');
+      const isTargetGrade10 = tgtGrade.includes('10') || tgtGrade.includes('១០');
       const isTargetGrade11 = tgtGrade.includes('11') || tgtGrade.includes('១១');
       if (isTargetLowerSec && !this.isLowerSecSubjectsCorrect(target.subjects)) {
         target.subjects = this.reorderOrGetLowerSecPreset(target.subjects);
+      }
+      if (isTargetGrade10 && !this.isGrade10SubjectsCorrect(target.subjects)) {
+        target.subjects = this.reorderOrGetGrade10Preset(target.subjects);
       }
       if (isTargetGrade11 && !this.isGrade11SubjectsCorrect(target.subjects)) {
         target.subjects = this.reorderOrGetGrade11Preset(target.subjects);
       }
       this.state.subjects = Array.isArray(target.subjects) && target.subjects.length > 0 
         ? target.subjects 
-        : (isTargetLowerSec ? this.getLowerSecondarySubjectsPreset() : (isTargetGrade11 ? this.getGrade11SubjectsPreset(target.track) : (target.track && (target.track.includes('សង្គម') || target.track.toLowerCase().includes('soc')) ? this.getSocialScienceSubjectsPreset() : this.getScienceSubjectsPreset())));
+        : (isTargetLowerSec ? this.getLowerSecondarySubjectsPreset() : (isTargetGrade10 ? this.getGrade10SubjectsPreset() : (isTargetGrade11 ? this.getGrade11SubjectsPreset(target.track) : (target.track && (target.track.includes('សង្គម') || target.track.toLowerCase().includes('soc')) ? this.getSocialScienceSubjectsPreset() : this.getScienceSubjectsPreset()))));
       this.state.tableDates = target.tableDates || this.state.tableDates || {};
       this.state.gradingRules = target.gradingRules || this.state.gradingRules || { scale: 50, decimalPlaces: 2, monthlyFormula: 'coef', passScore: 25.0 };
 
@@ -16641,6 +16645,58 @@ document.addEventListener('DOMContentLoaded', () => {
       ];
     },
 
+    getGrade10SubjectsPreset() {
+      return [
+        { id: 'khmer', name: 'ភាសាខ្មែរ', max: 150, coef: 3.0 },
+        { id: 'civics', name: 'សីលធម៌', max: 38, coef: 0.76 },
+        { id: 'history', name: 'ប្រវត្តិវិទ្យា', max: 37, coef: 0.74 },
+        { id: 'geo', name: 'ភូមិវិទ្យា', max: 38, coef: 0.76 },
+        { id: 'math', name: 'គណិតវិទ្យា', max: 150, coef: 3.0 },
+        { id: 'physics', name: 'រូបវិទ្យា', max: 50, coef: 1.0 },
+        { id: 'chemistry', name: 'គីមីវិទ្យា', max: 37, coef: 0.74 },
+        { id: 'biology', name: 'ជីវៈវិទ្យា', max: 38, coef: 0.76 },
+        { id: 'earth', name: 'ផែនដីវិទ្យា', max: 25, coef: 0.5 },
+        { id: 'english', name: 'អង់គ្លេស', max: 100, coef: 2.0 },
+        { id: 'home_econ', name: 'គេហវិទ្យា', max: 37, coef: 0.74 },
+        { id: 'computer', name: 'កុំព្យូទ័រ', max: 50, coef: 1.0 },
+        { id: 'sport', name: 'កីឡា', max: 50, coef: 1.0 },
+        { id: 'health', name: 'សុខភាព', max: 25, coef: 0.5 }
+      ];
+    },
+
+    isGrade10SubjectsCorrect(subjects) {
+      if (!Array.isArray(subjects) || subjects.length < 12) return false;
+      const expected = [
+        'khmer', 'civics', 'history', 'geo', 'math', 
+        'physics', 'chemistry', 'biology', 'earth', 'english', 
+        'computer', 'sport'
+      ];
+      return expected.every(id => subjects.some(s => s.id === id));
+    },
+
+    reorderOrGetGrade10Preset(existingSubjects) {
+      const preset = this.getGrade10SubjectsPreset();
+      if (!Array.isArray(existingSubjects) || existingSubjects.length === 0) {
+        return JSON.parse(JSON.stringify(preset));
+      }
+      const presetIds = new Set(preset.map(p => p.id));
+      const ordered = preset.map(pSub => {
+        const found = existingSubjects.find(s => 
+          s.id === pSub.id || 
+          s.name === pSub.name || 
+          (pSub.id === 'civics' && (s.id === 'civics' || s.name?.includes('សីល') || s.name?.includes('ពលរដ្ឋ'))) ||
+          (pSub.id === 'biology' && (s.id === 'biology' || s.name?.includes('ជីវ'))) ||
+          (pSub.id === 'home_econ' && (s.id === 'home_econ' || s.name?.includes('គេហ'))) ||
+          (pSub.id === 'health' && (s.id === 'health' || s.name?.includes('សុខភាព'))) ||
+          (pSub.id === 'computer' && (s.id === 'computer' || s.name?.includes('កុំព្យូទ័រ') || s.name?.includes('ព័ត៌មាន') || s.name?.includes('ict'))) ||
+          (pSub.id === 'sport' && (s.id === 'sport' || s.name?.includes('កីឡា') || s.name?.includes('អប់រំកាយ')))
+        );
+        return found ? { ...pSub, ...found, id: pSub.id, name: pSub.name } : { ...pSub };
+      });
+      const extra = existingSubjects.filter(s => !presetIds.has(s.id) && !ordered.some(o => o.id === s.id || o.name === s.name));
+      return [...ordered, ...extra];
+    },
+
     getLowerSecondarySubjectsPreset() {
       return [
         { id: 'khmer', name: 'ភាសាខ្មែរ', max: 100, coef: 2.0 },
@@ -16676,6 +16732,9 @@ document.addEventListener('DOMContentLoaded', () => {
           newSubjects = this.getSocialScienceSubjectsPreset();
           label = 'កញ្ចប់សង្គម (១០ មុខ - ភាសាខ្មែរ ១២៥)';
         }
+      } else if (presetType === 'grade_10') {
+        newSubjects = this.getGrade10SubjectsPreset();
+        label = 'កញ្ចប់ថ្នាក់ទី១០ (១៤ មុខ - ភាសាខ្មែរ/គណិត ១៥០, សរុប ៨២៥)';
       } else if (presetType === 'grade_11') {
         const curClass = this.state.classes?.find(c => c.id === this.state.currentClassId);
         const isSoc = curClass && curClass.track && (curClass.track.includes('សង្គម') || curClass.track.toLowerCase().includes('soc'));
@@ -16752,7 +16811,42 @@ document.addEventListener('DOMContentLoaded', () => {
         if (presetWrap) presetWrap.style.display = 'block';
         if (activateWrap) activateWrap.style.display = 'block';
         if (activateCheck) activateCheck.checked = true;
-        if (presetSelect) presetSelect.value = 'science';
+        if (presetSelect) {
+          const g = gradeSelect ? gradeSelect.value : '';
+          if (g.includes('១០') || g.includes('10')) {
+            presetSelect.value = 'grade_10';
+          } else if (g.includes('១១') || g.includes('11')) {
+            presetSelect.value = 'grade_11';
+          } else if (['7', '8', '9', '៧', '៨', '៩'].some(x => g.includes(x))) {
+            presetSelect.value = 'lower_sec';
+          } else {
+            presetSelect.value = 'science';
+          }
+        }
+      }
+
+      // Automatically synchronize subject preset when grade changes
+      if (gradeSelect && !gradeSelect._hasPresetSyncListener) {
+        gradeSelect.addEventListener('change', () => {
+          const pSel = document.getElementById('modal-class-subject-preset');
+          if (!pSel) return;
+          const g = gradeSelect.value;
+          if (g.includes('១០') || g.includes('10')) {
+            pSel.value = 'grade_10';
+          } else if (g.includes('១១') || g.includes('11')) {
+            pSel.value = 'grade_11';
+          } else if (['7', '8', '9', '៧', '៨', '៩'].some(x => g.includes(x))) {
+            pSel.value = 'lower_sec';
+          } else {
+            const val = trackSelect ? trackSelect.value : '';
+            if (val.includes('សង្គម') || val.toLowerCase().includes('soc')) {
+              pSel.value = 'social';
+            } else {
+              pSel.value = 'science';
+            }
+          }
+        });
+        gradeSelect._hasPresetSyncListener = true;
       }
 
       // Automatically synchronize subject preset when track changes
@@ -16760,6 +16854,11 @@ document.addEventListener('DOMContentLoaded', () => {
         trackSelect.addEventListener('change', () => {
           const pSel = document.getElementById('modal-class-subject-preset');
           if (!pSel) return;
+          const g = gradeSelect ? gradeSelect.value : '';
+          if (g.includes('១០') || g.includes('10')) {
+            pSel.value = 'grade_10';
+            return;
+          }
           const val = trackSelect.value;
           if (val.includes('សង្គម') || val.toLowerCase().includes('soc')) {
             pSel.value = 'social';
@@ -16809,6 +16908,7 @@ document.addEventListener('DOMContentLoaded', () => {
           cls.teacherPhone = teacherPhone;
 
           const isSocTrack = track && (track.includes('សង្គម') || track.toLowerCase().includes('soc'));
+          const isG10 = ['10', '១០'].some(x => String(grade).includes(x) || String(name).includes(x));
           const isG11 = ['11', '១១'].some(x => String(grade).includes(x) || String(name).includes(x));
 
           let subjectsUpdated = false;
@@ -16817,6 +16917,9 @@ document.addEventListener('DOMContentLoaded', () => {
             subjectsUpdated = true;
           } else if (preset === 'science') {
             cls.subjects = isG11 ? this.getGrade11SubjectsPreset('science') : this.getScienceSubjectsPreset();
+            subjectsUpdated = true;
+          } else if (preset === 'grade_10') {
+            cls.subjects = this.getGrade10SubjectsPreset();
             subjectsUpdated = true;
           } else if (preset === 'grade_11') {
             cls.subjects = this.getGrade11SubjectsPreset(isSocTrack ? 'social' : 'science');
@@ -16854,10 +16957,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add new class
         let subjects = [];
         const isSocTrack = track && (track.includes('សង្គម') || track.toLowerCase().includes('soc'));
+        const isG10 = ['10', '១០'].some(x => String(grade).includes(x) || String(name).includes(x));
         const isG11 = ['11', '១១'].some(x => String(grade).includes(x) || String(name).includes(x));
         const isLowerSec = ['7', '8', '9', '៧', '៨', '៩'].some(x => String(grade).includes(x) || String(name).includes(x));
 
-        if (preset === 'social' || (isSocTrack && preset !== 'science' && preset !== 'lower_sec')) {
+        if (preset === 'grade_10' || (isG10 && preset !== 'science' && preset !== 'social' && preset !== 'grade_11' && preset !== 'lower_sec')) {
+          subjects = this.getGrade10SubjectsPreset();
+        } else if (preset === 'social' || (isSocTrack && preset !== 'science' && preset !== 'lower_sec' && preset !== 'grade_10')) {
           if (isG11 || preset === 'grade_11') {
             subjects = this.getGrade11SocialSubjectsPreset();
           } else {
@@ -17523,6 +17629,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btnPreSoc = document.getElementById('btn-preset-social');
       if (btnPreSoc) btnPreSoc.addEventListener('click', () => this.applySubjectPreset('social'));
+
+      const btnPreG10 = document.getElementById('btn-preset-grade10');
+      if (btnPreG10) btnPreG10.addEventListener('click', () => this.applySubjectPreset('grade_10'));
 
       const btnPreG11 = document.getElementById('btn-preset-grade11');
       if (btnPreG11) btnPreG11.addEventListener('click', () => this.applySubjectPreset('grade_11'));
