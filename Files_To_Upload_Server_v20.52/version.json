@@ -1,0 +1,12 @@
+{
+  "version": "20.52",
+  "releaseDate": "2026-11-26",
+  "title": "កំណែទម្រង់ v20.52៖ បង្កើតកញ្ចប់មុខវិជ្ជាថ្នាក់ទី១០ (១៤ មុខវិជ្ជា - ពិន្ទុសរុប ៨២៥) ស្របតាមស្តង់ដារ និងគាំទ្រ Auto-Update ស្វ័យប្រវត្តិ",
+  "changelog": "១. បន្ថែមកញ្ចប់មុខវិជ្ជាថ្នាក់ទី១០ (Grade 10 Subject Preset)៖ កំណត់មុខវិជ្ជាទាំង ១៤ (ភាសាខ្មែរ ១៥០, គណិត ១៥០, អង់គ្លេស ១០០, រូប/កុំព្យូទ័រ/កីឡា ៥០, សីលធម៌/ប្រវត្តិ/ភូមិ/គីមី/ជីវៈ/គេហវិទ្យា ៣៧-៣៨, ផែនដី/សុខភាព ២៥ - ពិន្ទុសរុប ៨២៥) ដោយស្វ័យប្រវត្តិតាមស្តង់ដារសាលា។\n២. បន្ថែមប៊ូតុងកំណត់កញ្ចប់ថ្នាក់ទី១០ ក្នុង Settings និងក្នុងផ្ទាំងបង្កើតថ្នាក់ថ្មី (Add Class Modal) ព្រមទាំង Auto-sync កញ្ចប់មុខវិជ្ជាពេលជ្រើសរើសថ្នាក់ទី១០។\n៣. គាំទ្រការ Sync និង Auto-Update ឆ្លាតវៃទៅកាន់កុំព្យូទ័រដទៃទៀតតាមប្រព័ន្ធ GitHub ដោយស្វ័យប្រវត្តិ។",
+  "appJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/app.js",
+  "stylesCssUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/styles.css",
+  "calculationsJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/calculations.js",
+  "fallbackAppJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/app.js",
+  "fallbackStylesCssUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/styles.css",
+  "fallbackCalculationsJsUrl": "https://raw.githubusercontent.com/hakneng/Glass-Management/main/calculations.js"
+}
